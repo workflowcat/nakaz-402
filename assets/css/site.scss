@@ -100,6 +100,10 @@
 
 *, *::before, *::after { box-sizing: border-box; }
 
+/* CRITICAL: HTML hidden атрибут має ОВЕРРАЙДИТИ display: flex/grid/block.
+   Без цього JS виставляє hidden, але елемент лишається видимим. */
+[hidden] { display: none !important; }
+
 html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
 
 body {
@@ -381,8 +385,13 @@ kbd {
   box-shadow: var(--shadow-lg);
   overflow: hidden;
 }
+.search-head {
+  display: flex;
+  align-items: stretch;
+  border-bottom: 1px solid var(--border);
+}
 .search-input {
-  width: 100%;
+  flex: 1;
   padding: 1.1rem 1.4rem;
   font-size: 1.05rem;
   border: none;
@@ -390,7 +399,22 @@ kbd {
   color: var(--text);
   font-family: inherit;
   outline: none;
-  border-bottom: 1px solid var(--border);
+}
+.search-close {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: color 0.12s, background 0.12s;
+}
+.search-close:hover {
+  color: var(--text);
+  background: var(--bg-hover);
 }
 .search-results {
   max-height: 50vh;

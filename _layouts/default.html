@@ -90,7 +90,12 @@
 <div class="search-overlay" id="search-overlay" hidden>
   <div class="search-overlay-bg" data-search-close></div>
   <div class="search-panel">
-    <input type="search" id="search-input" class="search-input" placeholder="Шукати по сайту…" autocomplete="off" spellcheck="false">
+    <div class="search-head">
+      <input type="search" id="search-input" class="search-input" placeholder="Шукати по сайту…  (Esc щоб закрити)" autocomplete="off" spellcheck="false">
+      <button class="search-close" type="button" data-search-close aria-label="Закрити пошук">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M6 18L18 6"/></svg>
+      </button>
+    </div>
     <div class="search-results" id="search-results">
       <p class="search-hint">Друкуй, щоб знайти. <kbd>↑</kbd><kbd>↓</kbd> — навігація, <kbd>↵</kbd> — відкрити, <kbd>Esc</kbd> — закрити.</p>
     </div>
