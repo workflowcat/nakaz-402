@@ -5,6 +5,8 @@ import { getCollection } from 'astro:content';
 const chapters = await getCollection('polozhennia');
 const realChapters = chapters.filter(c => c.data.type === 'glava');
 const filled = realChapters.filter(c => !c.data.stub);
+const drafts = await getCollection('drafts');
+const activeDrafts = drafts.filter((d: any) => d.data.status !== 'rejected' && d.data.status !== 'adopted');
 ---
 <Layout title="Головна">
   <section class="py-12 sm:py-16">
@@ -21,8 +23,11 @@ const filled = realChapters.filter(c => !c.data.stub);
     </p>
     <div class="mt-6 flex flex-wrap gap-2">
       <a href="/changes/" class="inline-flex items-center px-4 py-2 rounded-md bg-accent-500 text-white text-sm font-medium hover:bg-accent-600 transition-colors">Усі зміни →</a>
-      <a href="/nakaz/" class="inline-flex items-center px-4 py-2 rounded-md border border-ink-200 dark:border-ink-700 text-sm font-medium hover:border-accent-500 hover:text-accent-600 dark:hover:text-accent-300 transition-colors">Прочитати наказ</a>
+      <a href="/drafts/" class="inline-flex items-center px-4 py-2 rounded-md border border-accent-500 text-accent-600 dark:text-accent-300 text-sm font-medium hover:bg-accent-50 dark:hover:bg-accent-900/20 transition-colors">
+        Драфти {activeDrafts.length > 0 && <span class="ml-1.5 px-1.5 py-0.5 rounded bg-accent-500 text-white text-[10px] font-mono">{activeDrafts.length}</span>}
+      </a>
       <a href="/polozhennia/" class="inline-flex items-center px-4 py-2 rounded-md border border-ink-200 dark:border-ink-700 text-sm font-medium hover:border-accent-500 hover:text-accent-600 dark:hover:text-accent-300 transition-colors">Положення</a>
+      <a href="/nakaz/" class="inline-flex items-center px-4 py-2 rounded-md border border-ink-200 dark:border-ink-700 text-sm font-medium hover:border-accent-500 hover:text-accent-600 dark:hover:text-accent-300 transition-colors">Прочитати наказ</a>
     </div>
   </section>
 
@@ -66,6 +71,40 @@ const filled = realChapters.filter(c => !c.data.stub);
       ))}
     </ul>
     <a href="/polozhennia/" class="inline-block mt-4 text-sm text-accent-600 dark:text-accent-300 hover:underline">Усі {realChapters.length} глав →</a>
+  </section>
+
+  <section class="mt-16">
+    <h2 class="text-xl font-bold tracking-tight mb-2 pt-3 border-t border-ink-200 dark:border-ink-800 relative">
+      <span class="absolute -top-px left-0 w-9 h-px bg-accent-500"></span>
+      Для тих, хто проєктує зміни
+    </h2>
+    <p class="text-sm text-ink-500 mb-5">
+      Юристам МОУ, ЦВЛК-експертам, адвокаційним організаціям. Готувати,
+      перевіряти і обговорювати правки до прийняття, у git-форматі.
+      <strong class="text-amber-600 dark:text-amber-300">Не є офіційним проєктом НПА.</strong>
+    </p>
+    <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
+      <a href="/drafts/" class="block p-4 rounded-md border border-accent-300 dark:border-accent-700 bg-accent-50/40 dark:bg-accent-900/10 hover:bg-accent-50 dark:hover:bg-accent-900/20 transition-colors">
+        <div class="text-sm font-mono text-accent-600 dark:text-accent-300 mb-1">📝 Проєкти амендментів</div>
+        <div class="font-medium mb-1">{activeDrafts.length} активн{activeDrafts.length === 1 ? 'ий' : 'их'}</div>
+        <div class="text-xs text-ink-500">Чернетки, на огляді, прийняті. Live preview before/after.</div>
+      </a>
+      <div class="block p-4 rounded-md border border-ink-200 dark:border-ink-800">
+        <div class="text-sm font-mono text-accent-600 dark:text-accent-300 mb-1">⚠️ Авто-лінтер</div>
+        <div class="font-medium mb-1">5 перевірок</div>
+        <div class="text-xs text-ink-500">Ref-exists, конфлікти, термін-дрейф — на кожному build.</div>
+      </div>
+      <div class="block p-4 rounded-md border border-ink-200 dark:border-ink-800">
+        <div class="text-sm font-mono text-accent-600 dark:text-accent-300 mb-1">📜 Citation generator</div>
+        <div class="font-medium mb-1">YAML → «Внести зміни...»</div>
+        <div class="text-xs text-ink-500">Готовий текст для офіційного наказу, з правильною граматикою.</div>
+      </div>
+      <a href="https://github.com/workflowcat/nakaz-402/tree/main/drafts" target="_blank" rel="noopener" class="block p-4 rounded-md border border-ink-200 dark:border-ink-800 hover:border-accent-500 hover:bg-ink-50 dark:hover:bg-ink-900 transition-colors">
+        <div class="text-sm font-mono text-accent-600 dark:text-accent-300 mb-1">✏️ Подати свій</div>
+        <div class="font-medium mb-1">через PR</div>
+        <div class="text-xs text-ink-500">drafts/&lt;рік&gt;-&lt;NNN&gt;-&lt;slug&gt;.md → PR → live на сайті.</div>
+      </a>
+    </div>
   </section>
 
   <section class="mt-16">
