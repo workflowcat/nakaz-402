@@ -28,6 +28,7 @@ amended_by:
 
 # Глава 2. Органи військово-лікарської експертизи
 
+{% include chapter-context.html %}
 {% include amendment-history.html %}
 
 <a id="p2.1"></a>
@@ -653,3 +654,14 @@ amended_by:
 
 > *{Пункт 2.10 — додано Наказом № 262 від 27.04.2024
 > ([z0616-24](https://zakon.rada.gov.ua/laws/show/z0616-24))}*
+
+<nav class="page-nav" aria-label="Сусідні глави">
+  <a class="pn-prev" href="{{ '/polozhennia/01-osnovy-organizatsii/01-zagalni-polozhennia.html' | relative_url }}">
+    <span class="pn-dir">← Назад</span>
+    Глава 1. Загальні положення
+  </a>
+  <a class="pn-next" href="{{ '/polozhennia/01-osnovy-organizatsii/03-rozhliad-zvernen.html' | relative_url }}">
+    <span class="pn-dir">Далі →</span>
+    Глава 3. Розгляд звернень
+  </a>
+</nav>

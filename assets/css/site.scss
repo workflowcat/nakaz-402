@@ -160,6 +160,65 @@
 }
 
 // ──────────────────────────────────────────────────────────────────
+// Загальна типографіка контенту
+// ──────────────────────────────────────────────────────────────────
+
+.main-content {
+  // Більше «повітря» між абзацами
+  p { line-height: 1.6; }
+  // Тонша межа для inline-code
+  p code, li code {
+    font-size: 0.86em;
+    padding: 1px 5px;
+    background: var(--surface-2);
+    border-radius: 3px;
+    border: none;
+  }
+  // Таблиці контенту: компактніші
+  table {
+    border-collapse: collapse;
+    th, td {
+      padding: 0.45rem 0.7rem;
+      line-height: 1.4;
+      vertical-align: top;
+    }
+    th {
+      background: var(--surface-2);
+      font-weight: 600;
+      text-align: left;
+    }
+  }
+  // Маркер-список без надлишкового відступу
+  ul, ol { padding-left: 1.5rem; }
+  ul li, ol li { margin: 0.25rem 0; line-height: 1.55; }
+  // Posilannia в тексті — м'який accent колір (без яскравого синього)
+  a:not(.btn):not(.hero-cta a):not(.uc-text a):not(.amendment-reg a):not(.amend-marker a) {
+    color: var(--accent);
+    text-decoration: none;
+    border-bottom: 1px solid transparent;
+    transition: border-color 0.12s;
+  }
+  a:not(.btn):not(.hero-cta a):not(.uc-text a):not(.amendment-reg a):not(.amend-marker a):hover {
+    border-bottom-color: var(--accent);
+  }
+  // Внутрішні якорі (#p1.4) — стрибаємо нижче, щоб не ховатись під sticky header
+  [id^="p"] { scroll-margin-top: 4rem; }
+}
+
+// h3 в контенті — для підпунктів типу 2.3.1, 2.4.7
+.main-content h3 {
+  margin-top: 1.5rem;
+  font-size: 1.15rem;
+  font-weight: 600;
+  letter-spacing: -0.005em;
+}
+.main-content h3 .anchor-heading {
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+.main-content h3:hover .anchor-heading { opacity: 0.4; }
+
+// ──────────────────────────────────────────────────────────────────
 // Section headings — м'якше відображаємо anchor icon від just-the-docs
 // ──────────────────────────────────────────────────────────────────
 
@@ -598,6 +657,130 @@ abbr[title]:hover {
   border-top: 1px solid var(--border);
   font-size: 0.85rem;
   opacity: 0.7;
+}
+
+// ──────────────────────────────────────────────────────────────────
+// Chapter context strip — над текстом глави
+// ──────────────────────────────────────────────────────────────────
+
+.chapter-context {
+  margin: -0.25rem 0 1.5rem;
+  padding: 0.8rem 1rem;
+  background: var(--surface-2);
+  border-radius: 6px;
+  border-left: 2px solid var(--accent);
+
+  .ch-crumb {
+    font-size: 0.78rem;
+    opacity: 0.75;
+    margin-bottom: 0.45rem;
+
+    a {
+      color: var(--body-text-color);
+      text-decoration: none;
+      border-bottom: 1px dashed transparent;
+    }
+    a:hover {
+      border-bottom-color: var(--accent);
+      color: var(--accent);
+    }
+    span { margin: 0 0.3rem; opacity: 0.45; }
+    .ch-parent { opacity: 0.85; font-weight: 500; }
+  }
+
+  .ch-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.1rem;
+    font-size: 0.78rem;
+  }
+  .ch-meta-item {
+    display: inline-flex;
+    flex-direction: column;
+    line-height: 1.25;
+  }
+  .ch-meta-label {
+    font-size: 0.62rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    opacity: 0.55;
+    margin-bottom: 0.05rem;
+  }
+  .ch-meta-value {
+    font-family: var(--mono-font-family, monospace);
+    font-size: 0.82rem;
+    font-feature-settings: "tnum" 1;
+  }
+  .ch-meta-value a {
+    text-decoration: none;
+    color: var(--accent);
+  }
+  .ch-status-active {
+    color: var(--op-insert);
+    align-self: end;
+    font-size: 0.78rem;
+    margin-left: auto;
+  }
+  .ch-status-repealed {
+    color: var(--op-repeal);
+    align-self: end;
+    font-size: 0.78rem;
+    margin-left: auto;
+  }
+}
+
+@media (max-width: 640px) {
+  .chapter-context .ch-meta {
+    gap: 0.75rem;
+  }
+  .chapter-context .ch-status-active,
+  .chapter-context .ch-status-repealed {
+    margin-left: 0;
+  }
+}
+
+// ──────────────────────────────────────────────────────────────────
+// Page-internal navigation: prev/next links наприкінці сторінки
+// ──────────────────────────────────────────────────────────────────
+
+.page-nav {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.85rem;
+  margin: 2.5rem 0 1rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--border);
+}
+.page-nav a {
+  display: block;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  text-decoration: none;
+  color: var(--body-text-color);
+  transition: border-color 0.15s, background 0.15s;
+  font-size: 0.9rem;
+}
+.page-nav a:hover {
+  border-color: var(--accent-soft);
+  background: var(--accent-bg);
+}
+.page-nav .pn-dir {
+  font-size: 0.66rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  opacity: 0.55;
+  margin-bottom: 0.2rem;
+  display: block;
+}
+.page-nav .pn-next { text-align: right; }
+.page-nav .pn-empty {
+  border-color: transparent;
+  pointer-events: none;
+  visibility: hidden;
+}
+@media (max-width: 640px) {
+  .page-nav { grid-template-columns: 1fr; }
 }
 
 // ──────────────────────────────────────────────────────────────────

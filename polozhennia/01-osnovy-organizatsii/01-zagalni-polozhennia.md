@@ -23,6 +23,7 @@ amended_by:
 
 # Глава 1. Загальні положення
 
+{% include chapter-context.html %}
 {% include amendment-history.html %}
 
 <a id="p1.1"></a>
@@ -190,3 +191,11 @@ amended_by:
 
 > *{Главу 1 розділу I доповнено новим пунктом 1.4 згідно з Наказом № 153 від
 > 27.02.2025 ([z0329-25](https://zakon.rada.gov.ua/laws/show/z0329-25#n22))}*
+
+<nav class="page-nav" aria-label="Сусідні глави">
+  <span class="pn-empty"></span>
+  <a class="pn-next" href="{{ '/polozhennia/01-osnovy-organizatsii/02-organy-vle.html' | relative_url }}">
+    <span class="pn-dir">Далі →</span>
+    Глава 2. Органи ВЛЕ
+  </a>
+</nav>

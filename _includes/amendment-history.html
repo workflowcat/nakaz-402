@@ -12,10 +12,15 @@
 {% assign span = last_date | minus: first_date %}
 {% if span == 0 %}{% assign span = 1 %}{% endif %}
 
+{% assign n = page.amended_by.size %}
+{% assign mod100 = n | modulo: 100 %}
+{% assign mod10 = n | modulo: 10 %}
+{% capture amend_word %}{% if mod100 >= 11 and mod100 <= 14 %}амендментів{% elsif mod10 == 1 %}амендмент{% elsif mod10 >= 2 and mod10 <= 4 %}амендменти{% else %}амендментів{% endif %}{% endcapture %}
+
 <details class="amend-history">
   <summary>
     📜 Історія цього пункту
-    <span class="ah-badge">{{ page.amended_by.size }} амендмент{% if page.amended_by.size > 1 %}и{% endif %} · {{ sorted.first.date | date: "%Y" }}—{{ sorted.last.date | date: "%Y" }}</span>
+    <span class="ah-badge">{{ page.amended_by.size }} {{ amend_word | strip }} · {{ sorted.first.date | date: "%Y" }}—{{ sorted.last.date | date: "%Y" }}</span>
   </summary>
   <div class="ah-body">
     <div class="ah-track" aria-hidden="true">

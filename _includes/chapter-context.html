@@ -1,0 +1,49 @@
+{% comment %}
+  Контекст-стрічка для сторінок глав Положення.
+  Показує breadcrumb (Розділ → Глава), дату базової редакції, останній амендмент.
+  Очікує:
+    page.id ─ типу polozhennia.r1.gl2
+    page.parent ─ Jekyll-поле, рядок з назвою батька (для нав)
+    page.grand_parent ─ те саме для дідуся
+    page.original_redaction ─ опціонально
+    page.last_amended.date ─ опціонально
+    page.amended_by ─ опціонально
+{% endcomment %}
+
+{% if page.id and page.type == "glava" %}
+<div class="chapter-context">
+  <nav class="ch-crumb" aria-label="Breadcrumb">
+    {% if page.grand_parent %}<a href="{{ '/polozhennia/' | relative_url }}">{{ page.grand_parent }}</a> <span>›</span> {% endif %}
+    {% if page.parent %}<span class="ch-parent">{{ page.parent }}</span>{% endif %}
+  </nav>
+  <div class="ch-meta">
+    {% if page.original_redaction %}
+      <span class="ch-meta-item">
+        <span class="ch-meta-label">базова редакція</span>
+        <span class="ch-meta-value">{{ page.original_redaction | date: "%d.%m.%Y" }}</span>
+      </span>
+    {% endif %}
+    {% if page.last_amended %}
+      <span class="ch-meta-item">
+        <span class="ch-meta-label">остання правка</span>
+        <span class="ch-meta-value">{{ page.last_amended.date | date: "%d.%m.%Y" }} · <a href="https://zakon.rada.gov.ua/laws/show/{{ page.last_amended.order }}" target="_blank" rel="noopener">{{ page.last_amended.order }}</a></span>
+      </span>
+    {% endif %}
+    {% if page.amended_by and page.amended_by.size > 0 %}
+      {% assign n = page.amended_by.size %}
+      {% assign mod100 = n | modulo: 100 %}
+      {% assign mod10 = n | modulo: 10 %}
+      {% capture w %}{% if mod100 >= 11 and mod100 <= 14 %}амендментів{% elsif mod10 == 1 %}амендмент{% elsif mod10 >= 2 and mod10 <= 4 %}амендменти{% else %}амендментів{% endif %}{% endcapture %}
+      <span class="ch-meta-item">
+        <span class="ch-meta-label">правок</span>
+        <span class="ch-meta-value">{{ n }} {{ w | strip }}</span>
+      </span>
+    {% endif %}
+    {% if page.status == "active" %}
+      <span class="ch-meta-item ch-status-active">● чинна</span>
+    {% elsif page.status == "repealed" %}
+      <span class="ch-meta-item ch-status-repealed">○ скасована</span>
+    {% endif %}
+  </div>
+</div>
+{% endif %}
