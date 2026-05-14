@@ -14,6 +14,7 @@ import type {
   ApiIndex, Order, Amendment, AmendmentList,
   Polozhennia, PolozhenniaList, Glossary,
   Draft, DraftList,
+  RhStattia, RhList, RhMeta,
 } from './types.ts';
 
 export interface ClientOptions {
@@ -31,6 +32,9 @@ export interface NakazClient {
   getGlossary(): Promise<Glossary>;
   listDrafts(): Promise<DraftList>;
   getDraft(slug: string): Promise<Draft>;
+  listRh(): Promise<RhList>;
+  getRhStattia(stattia: number | string): Promise<RhStattia>;
+  getRhMeta(): Promise<RhMeta>;
   getOpenApi(): Promise<unknown>;
 }
 
@@ -59,6 +63,9 @@ export function createClient(opts: ClientOptions = {}): NakazClient {
     getGlossary:     ()              => get<Glossary>('/api/glossary.json'),
     listDrafts:      ()              => get<DraftList>('/api/drafts.json'),
     getDraft:        (slug: string)  => get<Draft>(`/api/drafts/${slug}.json`),
+    listRh:          ()              => get<RhList>('/api/rh.json'),
+    getRhStattia:    (s)             => get<RhStattia>(`/api/rh/${String(s).padStart(3, '0')}.json`),
+    getRhMeta:       ()              => get<RhMeta>('/api/rh/meta.json'),
     getOpenApi:      ()              => get('/api/openapi.json'),
   };
 }

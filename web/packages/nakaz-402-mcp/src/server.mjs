@@ -97,6 +97,52 @@ const TOOLS = [
     },
   },
   {
+    name: 'list_rh',
+    description: 'Перелік статей Розкладу хвороб (Додаток 1) — нозологічна назва, клас МКХ, кількість пунктів.',
+    inputSchema: { type: 'object', properties: {}, additionalProperties: false },
+  },
+  {
+    name: 'get_rh_stattia',
+    description: 'Повна стаття РХ з усіма пунктами та категоріями придатності за 4 графами (контингентами). Аргумент: stattia (номер 1-90, як число або zero-padded "042").',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        stattia: { type: 'string', description: 'Номер статті ("42", "042", або число 42).' },
+      },
+      required: ['stattia'],
+      additionalProperties: false,
+    },
+  },
+  {
+    name: 'get_rh_meta',
+    description: 'Метадані РХ: список категорій з severity-індексом, графи (контингенти), класи МКХ-10, формальне правило комбінації категорій (worst-wins).',
+    inputSchema: { type: 'object', properties: {}, additionalProperties: false },
+  },
+  {
+    name: 'calc_fitness',
+    description: 'Розрахунок підсумкової категорії придатності для людини з кількома діагнозами. Бере контингент (Graf I-IV) і список діагнозів {stattia, punkt}, повертає категорію за кожним діагнозом окремо + підсумок worst-wins.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        contingent: { type: 'string', enum: ['I', 'II', 'III', 'IV'], description: 'Графа: I=призовники, II=строкова/курсанти, III=офіцери/контракт, IV=військовозобов\'язані.' },
+        diagnoses: {
+          type: 'array',
+          minItems: 1,
+          items: {
+            type: 'object',
+            required: ['stattia', 'punkt'],
+            properties: {
+              stattia: { type: ['string', 'integer'], description: 'Номер статті РХ.' },
+              punkt: { type: 'string', description: 'Літера пункту: "а", "б", "в" тощо.' },
+            },
+          },
+        },
+      },
+      required: ['contingent', 'diagnoses'],
+      additionalProperties: false,
+    },
+  },
+  {
     name: 'get_draft',
     description: 'Fetch a single draft with full operations, references, lint findings, and the auto-generated formal "Внести зміни..." citation text ready to paste into a publishable change-act.',
     inputSchema: {
@@ -127,6 +173,54 @@ async function callTool(name, args) {
       return list;
     }
     case 'get_draft':        return api(`/api/drafts/${args.slug}.json`);
+    case 'list_rh':          return api('/api/rh.json');
+    case 'get_rh_meta':      return api('/api/rh/meta.json');
+    case 'get_rh_stattia': {
+      const num = String(args.stattia).padStart(3, '0');
+      return api(`/api/rh/${num}.json`);
+    }
+    case 'calc_fitness': {
+      const { contingent, diagnoses } = args;
+      const meta = await api('/api/rh/meta.json');
+      const severityMap = Object.fromEntries(meta.categories.map((c) => [c.code, c.severity ?? -1]));
+      const grafaInfo = meta.grafy.find((g) => g.code === contingent);
+      const results = [];
+      for (const d of diagnoses) {
+        const num = String(d.stattia).padStart(3, '0');
+        const s = await api(`/api/rh/${num}.json`);
+        const p = s.punkty.find((x) => x.id === d.punkt);
+        if (!p) {
+          results.push({ stattia: s.stattia, punkt: d.punkt, error: `Пункт "${d.punkt}" не знайдено в статті ${s.stattia}` });
+          continue;
+        }
+        const cat = p.grafy[contingent] ?? null;
+        const catDesc = meta.categories.find((c) => c.code === cat)?.description ?? null;
+        results.push({
+          stattia: s.stattia,
+          stattia_name: s.short_nazva ?? s.nazva,
+          punkt: d.punkt,
+          punkt_opys: p.opys,
+          category: cat,
+          category_description: catDesc,
+          severity: severityMap[cat] ?? null,
+        });
+      }
+      const valid = results.filter((r) => !r.error && r.category);
+      const worst = valid.reduce((a, b) =>
+        (a?.severity ?? -1) >= (b?.severity ?? -1) ? a : b, null);
+      return {
+        contingent,
+        contingent_audience: grafaInfo?.audience ?? null,
+        per_diagnosis: results,
+        summary: worst ? {
+          category: worst.category,
+          description: worst.category_description,
+          driven_by: { stattia: worst.stattia, stattia_name: worst.stattia_name, punkt: worst.punkt },
+        } : null,
+        combination_rule: meta.combination_rule,
+        disclaimer: 'Дані ілюстративні, результат не може замінити рішення ВЛК.',
+      };
+    }
     case 'search_polozhennia': {
       const list = await api('/api/polozhennia.json');
       const q = args.query.toLowerCase();

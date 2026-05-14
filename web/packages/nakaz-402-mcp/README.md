@@ -16,6 +16,10 @@ as tools for AI agents — Claude Desktop, Claude Code, ChatGPT desktop, Cursor,
 | `get_glossary` | 25 Ukrainian abbreviations + expansions. |
 | `list_drafts` | Proposed amendments with status + lint summary. Optional `status` filter. |
 | `get_draft` | One draft with full operations, lint findings, and the auto-generated formal change-act text ready to paste into a publishable наказ. |
+| `list_rh` | All Розклад хвороб articles (туберкульоз, гіпертензія, etc.) with klas + punkt count. |
+| `get_rh_stattia` | One Розклад хвороб article with full punkty × grafy category matrix. |
+| `get_rh_meta` | Categories with severity index, grafy (контингенти), klasy (МКХ-10), combination rule. |
+| `calc_fitness` | Compute combined fitness category for a person with multiple diagnoses. Args: `contingent` (I-IV) + `diagnoses` (list of {stattia, punkt}). Returns per-diagnosis result + worst-wins summary. |
 
 ## Install
 

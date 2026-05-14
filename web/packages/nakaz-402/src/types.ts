@@ -137,6 +137,68 @@ export interface DraftList {
   items: DraftSummary[];
 }
 
+export type Contingent = 'I' | 'II' | 'III' | 'IV';
+
+export interface RhPunkt {
+  id: string;          // "а" | "б" | "в" …
+  opys: string;
+  grafy: Record<Contingent, string>;
+}
+
+export interface RhStattiaSummary {
+  id: string;
+  stattia: number;
+  klas: string;
+  nazva: string;
+  short_nazva?: string;
+  punkty_count: number;
+  punkty_ids: string[];
+  links: Record<string, string>;
+}
+
+export interface RhStattia extends RhStattiaSummary {
+  status: string;
+  source: string | null;
+  punkty: RhPunkt[];
+  last_amended: { date: IsoDate | string; order: string } | null;
+  references: Record<string, string | string[]> | null;
+}
+
+export interface RhList {
+  count: number;
+  items: RhStattiaSummary[];
+}
+
+export interface RhCategory {
+  code: string;        // "А", "Б-3", "Д"
+  description: string;
+  severity: number | null;
+}
+
+export interface RhGrafa {
+  code: Contingent;
+  label: string;
+  audience: string;
+  notes?: string;
+}
+
+export interface RhKlas {
+  id: string;
+  nazva: string;
+  statti_range?: string;
+}
+
+export interface RhMeta {
+  categories: RhCategory[];
+  grafy: RhGrafa[];
+  klasy: RhKlas[];
+  combination_rule: {
+    type: string;
+    description: string;
+    severity_order: string[];
+  };
+}
+
 export interface ApiIndex {
   name: string;
   description: string;
