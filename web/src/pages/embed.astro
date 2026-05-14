@@ -1,0 +1,73 @@
+---
+import Layout from '../layouts/Layout.astro';
+---
+<Layout title="Embed widget" description="Вбудовуйте живі дані Наказу № 402 на свій сайт одним <script>.">
+  <h1 class="text-3xl font-bold tracking-tight mt-6 mb-2">Embed widget</h1>
+  <p class="text-ink-500 mb-6">
+    Один script-тег, два custom-elements. Дані тягнуться напряму з нашого API — завжди актуальні.
+    Підтримує темну тему через <code class="font-mono text-sm">prefers-color-scheme</code>.
+  </p>
+
+  <section class="mb-10">
+    <h2 class="text-xl font-semibold mb-3 mt-6">1. Останні зміни</h2>
+    <p class="text-sm text-ink-500 mb-3">Хронологія наказів-змін. Атрибут <code class="font-mono">limit</code> керує кількістю записів (за замовчуванням 5).</p>
+
+    <details class="mb-4">
+      <summary class="cursor-pointer text-sm text-accent-600 dark:text-accent-300 underline">HTML</summary>
+      <pre class="mt-2 overflow-x-auto bg-ink-50 dark:bg-ink-900 p-3 rounded border border-ink-200 dark:border-ink-800 text-xs"><code>{`<script type="module" src="https://nakaz-402.vercel.app/embed/nakaz-402.js"></script>
+<nakaz-402-amendments limit="5"></nakaz-402-amendments>`}</code></pre>
+    </details>
+
+    <div class="my-4">
+      <script type="module" src="/embed/nakaz-402.js"></script>
+      <nakaz-402-amendments limit="5"></nakaz-402-amendments>
+    </div>
+  </section>
+
+  <section class="mb-10">
+    <h2 class="text-xl font-semibold mb-3 mt-6">2. Конкретний пункт</h2>
+    <p class="text-sm text-ink-500 mb-3">
+      Покажіть актуальний текст однієї глави або одного пункту. Атрибут <code class="font-mono">slug</code> — обов'язковий,
+      <code class="font-mono">punkt</code> — опціональний (без нього показуємо першу частину глави).
+    </p>
+
+    <details class="mb-4">
+      <summary class="cursor-pointer text-sm text-accent-600 dark:text-accent-300 underline">HTML</summary>
+      <pre class="mt-2 overflow-x-auto bg-ink-50 dark:bg-ink-900 p-3 rounded border border-ink-200 dark:border-ink-800 text-xs"><code>{`<nakaz-402-punkt
+  slug="01-osnovy-organizatsii/01-zagalni-polozhennia"
+  punkt="1.1"
+></nakaz-402-punkt>`}</code></pre>
+    </details>
+
+    <div class="my-4">
+      <nakaz-402-punkt slug="01-osnovy-organizatsii/01-zagalni-polozhennia" punkt="1.1"></nakaz-402-punkt>
+    </div>
+  </section>
+
+  <section class="mb-10">
+    <h2 class="text-xl font-semibold mb-3 mt-6">Атрибути</h2>
+    <table class="w-full text-sm">
+      <thead class="text-left text-ink-500 border-b border-ink-200 dark:border-ink-800">
+        <tr><th class="py-2 pr-3 font-medium">Тег</th><th class="py-2 pr-3 font-medium">Атрибут</th><th class="py-2 font-medium">Опис</th></tr>
+      </thead>
+      <tbody class="font-mono text-xs">
+        <tr class="border-b border-ink-200 dark:border-ink-800"><td class="py-2 pr-3">&lt;nakaz-402-amendments&gt;</td><td class="py-2 pr-3">limit</td><td class="py-2 font-sans">1–50, скільки амендментів показати (default 5)</td></tr>
+        <tr class="border-b border-ink-200 dark:border-ink-800"><td class="py-2 pr-3">&lt;nakaz-402-amendments&gt;</td><td class="py-2 pr-3">base</td><td class="py-2 font-sans">Альтернативний baseURL (для self-hosted дзеркала)</td></tr>
+        <tr class="border-b border-ink-200 dark:border-ink-800"><td class="py-2 pr-3">&lt;nakaz-402-punkt&gt;</td><td class="py-2 pr-3">slug</td><td class="py-2 font-sans">Slug глави, обов'язково</td></tr>
+        <tr class="border-b border-ink-200 dark:border-ink-800"><td class="py-2 pr-3">&lt;nakaz-402-punkt&gt;</td><td class="py-2 pr-3">punkt</td><td class="py-2 font-sans">"1.1", "2.3.4" тощо. Якщо пропустити — вся глава (обрізана до 1200 символів)</td></tr>
+        <tr><td class="py-2 pr-3">&lt;nakaz-402-punkt&gt;</td><td class="py-2 pr-3">base</td><td class="py-2 font-sans">Альтернативний baseURL</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section class="mb-10">
+    <h2 class="text-xl font-semibold mb-3 mt-6">Безпека та стиль</h2>
+    <ul class="space-y-2 text-sm text-ink-700 dark:text-ink-300 list-disc list-inside">
+      <li>Усе рендериться у Shadow DOM — ваші CSS і JS не торкаються вмісту, і навпаки.</li>
+      <li>Жодних cookies / трекерів / зовнішніх запитів окрім nakaz-402.vercel.app.</li>
+      <li>CORS відкритий для всіх Origin.</li>
+      <li>Світла/темна тема — автоматично за <code class="font-mono">prefers-color-scheme</code>.</li>
+      <li>Ліцензія: CC0 1.0 Universal. Авторитетне джерело — <a class="text-accent-600 dark:text-accent-300 underline" href="https://zakon.rada.gov.ua/laws/show/z1109-08" target="_blank" rel="noopener">zakon.rada.gov.ua</a>.</li>
+    </ul>
+  </section>
+</Layout>
