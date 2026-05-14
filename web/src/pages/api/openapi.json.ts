@@ -87,6 +87,26 @@ export const GET: APIRoute = async ({ site }) => {
           responses: { '200': { description: 'OK', content: { 'application/json': { schema: { $ref: '#/components/schemas/Glossary' } } } } },
         },
       },
+      '/api/drafts.json': {
+        get: {
+          summary: 'List of all proposed amendments (drafts) with lint summary',
+          operationId: 'listDrafts',
+          responses: { '200': { description: 'OK', content: { 'application/json': { schema: { $ref: '#/components/schemas/DraftList' } } } } },
+        },
+      },
+      '/api/drafts/{slug}.json': {
+        get: {
+          summary: 'Single draft with operations, lint findings, and generated formal citation text',
+          operationId: 'getDraft',
+          parameters: [
+            { name: 'slug', in: 'path', required: true, schema: { type: 'string' }, example: '2026-001-trembita-electronic-records' },
+          ],
+          responses: {
+            '200': { description: 'OK', content: { 'application/json': { schema: { $ref: '#/components/schemas/Draft' } } } },
+            '404': { description: 'Unknown slug' },
+          },
+        },
+      },
       '/changes/rss.xml': {
         get: {
           summary: 'RSS 2.0 feed of amendments',
@@ -192,6 +212,84 @@ export const GET: APIRoute = async ({ site }) => {
                 original_redaction: { type: ['string', 'null'] },
                 amended_by: { type: 'array', items: { type: 'object' } },
                 body_markdown: { type: 'string', description: 'Full chapter text in Markdown' },
+              },
+            },
+          ],
+        },
+        DraftOperation: {
+          type: 'object',
+          required: ['op'],
+          properties: {
+            op: { type: 'string', enum: ['redaction', 'insert', 'repeal', 'restore'] },
+            target: { type: 'string' },
+            after: { type: 'string' },
+            before: { type: 'string' },
+            new_id: { type: 'string' },
+            new_text: { type: 'string' },
+            text: { type: 'string' },
+            rationale: { type: 'string' },
+          },
+        },
+        LintFinding: {
+          type: 'object',
+          required: ['level', 'code', 'message'],
+          properties: {
+            level: { type: 'string', enum: ['error', 'warning', 'info'] },
+            op_index: { type: 'integer' },
+            code: { type: 'string', example: 'ref-not-found' },
+            message: { type: 'string' },
+            related: { type: 'array', items: { type: 'string' } },
+          },
+        },
+        DraftSummary: {
+          type: 'object',
+          required: ['id', 'slug', 'title', 'status'],
+          properties: {
+            id: { type: 'string' },
+            slug: { type: 'string' },
+            title: { type: 'string' },
+            status: { type: 'string', enum: ['draft', 'review', 'adopted', 'rejected'] },
+            proposed_by: { type: ['string', 'null'] },
+            proposed_at: { type: ['string', 'null'], format: 'date' },
+            short_summary: { type: ['string', 'null'] },
+            operations_count: { type: 'integer' },
+            lint: {
+              type: 'object',
+              properties: {
+                errors: { type: 'integer' },
+                warnings: { type: 'integer' },
+                clean: { type: 'boolean' },
+              },
+            },
+            links: { type: 'object', additionalProperties: { type: 'string' } },
+          },
+        },
+        DraftList: {
+          type: 'object',
+          properties: {
+            count: { type: 'integer' },
+            items: { type: 'array', items: { $ref: '#/components/schemas/DraftSummary' } },
+          },
+        },
+        Draft: {
+          allOf: [
+            { $ref: '#/components/schemas/DraftSummary' },
+            {
+              type: 'object',
+              properties: {
+                operations: { type: 'array', items: { $ref: '#/components/schemas/DraftOperation' } },
+                references: { type: 'array', items: { type: 'object' } },
+                discussion: { type: ['object', 'null'] },
+                explanation_markdown: { type: 'string' },
+                citation: { type: 'string', description: 'Formal "Внести зміни..." text generated from operations.' },
+                lint: {
+                  type: 'object',
+                  properties: {
+                    errors: { type: 'integer' },
+                    warnings: { type: 'integer' },
+                    findings: { type: 'array', items: { $ref: '#/components/schemas/LintFinding' } },
+                  },
+                },
               },
             },
           ],

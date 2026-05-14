@@ -13,6 +13,7 @@ export * from './types.ts';
 import type {
   ApiIndex, Order, Amendment, AmendmentList,
   Polozhennia, PolozhenniaList, Glossary,
+  Draft, DraftList,
 } from './types.ts';
 
 export interface ClientOptions {
@@ -28,6 +29,8 @@ export interface NakazClient {
   listPolozhennia(): Promise<PolozhenniaList>;
   getPolozhennia(slug: string): Promise<Polozhennia>;
   getGlossary(): Promise<Glossary>;
+  listDrafts(): Promise<DraftList>;
+  getDraft(slug: string): Promise<Draft>;
   getOpenApi(): Promise<unknown>;
 }
 
@@ -54,6 +57,8 @@ export function createClient(opts: ClientOptions = {}): NakazClient {
     listPolozhennia: ()              => get<PolozhenniaList>('/api/polozhennia.json'),
     getPolozhennia:  (slug: string)  => get<Polozhennia>(`/api/polozhennia/${slug}.json`),
     getGlossary:     ()              => get<Glossary>('/api/glossary.json'),
+    listDrafts:      ()              => get<DraftList>('/api/drafts.json'),
+    getDraft:        (slug: string)  => get<Draft>(`/api/drafts/${slug}.json`),
     getOpenApi:      ()              => get('/api/openapi.json'),
   };
 }

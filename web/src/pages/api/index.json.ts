@@ -16,6 +16,8 @@ export const GET: APIRoute = async ({ site }) => {
       polozhennia: `${base}/api/polozhennia.json`,
       polozhennia_by_slug: `${base}/api/polozhennia/{slug}.json`,
       glossary: `${base}/api/glossary.json`,
+      drafts: `${base}/api/drafts.json`,
+      draft_by_slug: `${base}/api/drafts/{slug}.json`,
       openapi: `${base}/api/openapi.json`,
     },
     notes: [

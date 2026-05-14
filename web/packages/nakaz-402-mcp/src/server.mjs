@@ -81,6 +81,33 @@ const TOOLS = [
     description: 'List all 25 Ukrainian abbreviations used in the order with their expansions (ВЛК, ЦВЛК, etc.).',
     inputSchema: { type: 'object', properties: {}, additionalProperties: false },
   },
+  {
+    name: 'list_drafts',
+    description: 'List proposed amendments (drafts) with status, operation count, and lint summary (errors / warnings / clean).',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        status: {
+          type: 'string',
+          enum: ['draft', 'review', 'adopted', 'rejected'],
+          description: 'Optional filter: only return drafts in this status.',
+        },
+      },
+      additionalProperties: false,
+    },
+  },
+  {
+    name: 'get_draft',
+    description: 'Fetch a single draft with full operations, references, lint findings, and the auto-generated formal "Внести зміни..." citation text ready to paste into a publishable change-act.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        slug: { type: 'string', description: 'Draft slug, e.g. "2026-001-trembita-electronic-records".' },
+      },
+      required: ['slug'],
+      additionalProperties: false,
+    },
+  },
 ];
 
 async function callTool(name, args) {
@@ -91,6 +118,15 @@ async function callTool(name, args) {
     case 'list_polozhennia': return api('/api/polozhennia.json');
     case 'get_polozhennia':  return api(`/api/polozhennia/${args.slug}.json`);
     case 'get_glossary':     return api('/api/glossary.json');
+    case 'list_drafts': {
+      const list = await api('/api/drafts.json');
+      if (args.status) {
+        list.items = list.items.filter((d) => d.status === args.status);
+        list.count = list.items.length;
+      }
+      return list;
+    }
+    case 'get_draft':        return api(`/api/drafts/${args.slug}.json`);
     case 'search_polozhennia': {
       const list = await api('/api/polozhennia.json');
       const q = args.query.toLowerCase();

@@ -88,6 +88,55 @@ export interface Glossary {
   items: GlossaryItem[];
 }
 
+export type DraftStatus = 'draft' | 'review' | 'adopted' | 'rejected';
+export type DraftOp = 'redaction' | 'insert' | 'repeal' | 'restore';
+
+export interface DraftOperation {
+  op: DraftOp;
+  target?: string;
+  after?: string;
+  before?: string;
+  new_id?: string;
+  new_text?: string;
+  text?: string;
+  rationale?: string;
+}
+
+export interface LintFinding {
+  level: 'error' | 'warning' | 'info';
+  op_index?: number;
+  code: string;
+  message: string;
+  related?: string[];
+}
+
+export interface DraftSummary {
+  id: string;
+  slug: string;
+  title: string;
+  status: DraftStatus;
+  proposed_by: string | null;
+  proposed_at: IsoDate | null;
+  short_summary: string | null;
+  operations_count: number;
+  lint: { errors: number; warnings: number; clean: boolean };
+  links: Record<string, string>;
+}
+
+export interface Draft extends DraftSummary {
+  operations: DraftOperation[];
+  references: Array<{ title: string; url: string }>;
+  discussion: { github?: string; contacts?: string[] } | null;
+  explanation_markdown: string;
+  citation: string;
+  lint: { errors: number; warnings: number; findings: LintFinding[] };
+}
+
+export interface DraftList {
+  count: number;
+  items: DraftSummary[];
+}
+
 export interface ApiIndex {
   name: string;
   description: string;

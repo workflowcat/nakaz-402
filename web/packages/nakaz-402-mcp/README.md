@@ -14,6 +14,8 @@ as tools for AI agents — Claude Desktop, Claude Code, ChatGPT desktop, Cursor,
 | `get_polozhennia` | One chapter with full Markdown body. |
 | `search_polozhennia` | Case-insensitive substring search across all titles + bodies. |
 | `get_glossary` | 25 Ukrainian abbreviations + expansions. |
+| `list_drafts` | Proposed amendments with status + lint summary. Optional `status` filter. |
+| `get_draft` | One draft with full operations, lint findings, and the auto-generated formal change-act text ready to paste into a publishable наказ. |
 
 ## Install
 
