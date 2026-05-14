@@ -1,7 +1,7 @@
 ---
 import Layout from '../../layouts/Layout.astro';
 import { getCollection, render } from 'astro:content';
-import { resolveTarget, wordDiff, diffBefore, diffAfter, buildPunktIdIndex, lintDraft, lintTerminology } from '../../lib/drafts';
+import { resolveTarget, wordDiff, diffBefore, diffAfter, buildPunktIdIndex, lintDraft, lintTerminology, generateCitation } from '../../lib/drafts';
 
 export async function getStaticPaths() {
   const drafts = await getCollection('drafts');
@@ -36,6 +36,8 @@ const findings = [
 ];
 const errorCount = findings.filter((f) => f.level === 'error').length;
 const warningCount = findings.filter((f) => f.level === 'warning').length;
+
+const citation = generateCitation(entry as any);
 
 function strip(text: string): string {
   // Strip HTML anchor tags so the "before" snippet reads as plain text.
@@ -234,6 +236,31 @@ const OP_COLOR: Record<string, string> = {
       );
     })}
   </ol>
+
+  {citation && (
+    <section class="my-8 rounded-md border border-ink-200 dark:border-ink-800 overflow-hidden">
+      <header class="flex items-center justify-between gap-3 px-4 py-2 bg-ink-50 dark:bg-ink-900 border-b border-ink-200 dark:border-ink-800 flex-wrap">
+        <span class="text-sm font-medium">Формальний текст наказу-амендменту</span>
+        <button id="copy-citation" type="button" class="text-xs px-2 py-1 rounded border border-ink-200 dark:border-ink-700 hover:border-accent-500 hover:text-accent-600">📋 Копіювати</button>
+      </header>
+      <pre id="citation-text" class="px-4 py-4 text-sm whitespace-pre-wrap font-sans bg-white dark:bg-ink-950 leading-relaxed">{citation}</pre>
+      <footer class="px-4 py-2 text-xs text-ink-500 border-t border-ink-200 dark:border-ink-800 italic">
+        Авто-згенеровано з YAML-операцій. Підставити в проєкт реального наказу — і
+        перевірити з юристом перед поданням до Мін'юсту.
+      </footer>
+    </section>
+    <script is:inline>
+      document.getElementById('copy-citation')?.addEventListener('click', function () {
+        const txt = document.getElementById('citation-text')?.textContent || '';
+        if (navigator.clipboard?.writeText) {
+          navigator.clipboard.writeText(txt).then(() => {
+            this.textContent = '✓ скопійовано';
+            setTimeout(() => { this.textContent = '📋 Копіювати'; }, 1500);
+          });
+        }
+      });
+    </script>
+  )}
 
   {entry.body && entry.body.trim().length > 0 && (
     <>

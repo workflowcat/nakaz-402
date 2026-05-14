@@ -244,6 +244,119 @@ export function lintDraft(
   return findings;
 }
 
+// ---- Citation generator ----
+
+const ROMAN: Record<string, string> = {
+  '1': 'I', '2': 'II', '3': 'III', '4': 'IV', '5': 'V',
+  '6': 'VI', '7': 'VII', '8': 'VIII', '9': 'IX', '10': 'X',
+};
+
+/**
+ * Render a target id like "polozhennia.r1.gl1.p1.4" as a human-readable
+ * reference: "пункт 1.4 глави 1 розділу I" (nominative) or
+ * "пункту 1.4 глави 1 розділу I" (genitive).
+ *
+ * `caseForm` controls the head noun (пункт):
+ *   'nom' → пункт / підпункт (subject form)
+ *   'gen' → пункту / підпункту (after "після", "перед" etc.)
+ *   'acc' → пункт / підпункт (same as nom for inanimate masc.)
+ *
+ * Modifier nouns "глави" and "розділу" are always genitive — the
+ * Ukrainian "X of Y" pattern uses genitive on the modifier.
+ */
+export function formatTargetReference(
+  target: string,
+  caseForm: 'nom' | 'gen' | 'acc' = 'nom',
+): string {
+  const parts: string[] = [];
+  const rozdil = target.match(/\.r(\d+)(?=\.|$)/);
+  const glava = target.match(/\.gl(\d+)(?=\.|$)/);
+  const punkt = target.match(/\.p(\d+\.\d+(?:\.\d+)?)(?=\.|$)/);
+  if (punkt) {
+    const num = punkt[1];
+    const isSubpoint = (num.match(/\./g) ?? []).length >= 2;
+    const head = isSubpoint
+      ? (caseForm === 'gen' ? 'підпункту' : 'підпункт')
+      : (caseForm === 'gen' ? 'пункту' : 'пункт');
+    parts.push(`${head} ${num}`);
+  } else if (glava && !punkt) {
+    // Glava-level reference (no specific пункт) → adjust case for the head.
+    const head = caseForm === 'gen' ? 'глави' : caseForm === 'acc' ? 'главу' : 'глава';
+    parts.push(`${head} ${glava[1]}`);
+  }
+  // Always-genitive modifiers when chained:
+  if (punkt && glava) parts.push(`глави ${glava[1]}`);
+  if (rozdil) parts.push(`розділу ${ROMAN[rozdil[1]] ?? rozdil[1]}`);
+  return parts.join(' ');
+}
+
+function formatInsertVerb(op: DraftOp): string {
+  const anchor = op.after ?? op.before;
+  const newPunktNum = op.new_id
+    ? (op.new_id.match(/\.p(\d+\.\d+(?:\.\d+)?)$/) ?? [])[1] ?? ''
+    : '';
+  const newPunktPhrase = newPunktNum ? `новим пунктом ${newPunktNum}` : 'новим пунктом';
+  if (!anchor) return `доповнити Положення ${newPunktPhrase} такого змісту`;
+
+  // Parse anchor parts manually so we can compose accusative-glava + genitive-anchor.
+  const rozdil = anchor.match(/\.r(\d+)/);
+  const glava = anchor.match(/\.gl(\d+)/);
+  const punkt = anchor.match(/\.p(\d+\.\d+(?:\.\d+)?)/);
+  const isSubpoint = punkt ? (punkt[1].match(/\./g) ?? []).length >= 2 : false;
+  const direction = op.after ? 'після' : 'перед';
+  const punktGen = punkt
+    ? `${isSubpoint ? 'підпункту' : 'пункту'} ${punkt[1]}`
+    : '';
+  const glavaAcc = glava ? `главу ${glava[1]}` : '';
+  const rozdilGen = rozdil ? `розділу ${ROMAN[rozdil[1]] ?? rozdil[1]}` : '';
+  // Standard MOU pattern: "главу N розділу X після пункту Y.Z доповнити новим пунктом A.B такого змісту"
+  const glavaRef = [glavaAcc, rozdilGen].filter(Boolean).join(' ');
+  return [glavaRef, punktGen ? `${direction} ${punktGen}` : '', `доповнити ${newPunktPhrase} такого змісту`]
+    .filter(Boolean)
+    .join(' ');
+}
+
+const OP_VERB: Record<string, (target: string, opData: DraftOp) => string> = {
+  redaction: (t) => `${t} викласти в такій редакції`,
+  insert: (_t, op) => formatInsertVerb(op),
+  repeal: (t) => `${t} виключити`,
+  restore: (t) => `${t} поновити`,
+};
+
+/**
+ * Generate the formal "Внести зміни..." text from a draft.
+ * Output is plain Ukrainian — same format MOU lawyers actually copy
+ * into the change-act they file.
+ */
+export function generateCitation(draft: {
+  data: {
+    title?: string;
+    operations?: DraftOp[];
+  };
+}): string {
+  const ops = draft.data.operations ?? [];
+  if (ops.length === 0) return '';
+
+  const preamble =
+    'Внести до Положення про військово-лікарську експертизу, затвердженого ' +
+    'Наказом Міністерства оборони України від 14 серпня 2008 року № 402, ' +
+    'такі зміни:';
+
+  const body = ops.map((op, i) => {
+    const target = op.target ?? op.after ?? op.before ?? '';
+    const ref = formatTargetReference(target);
+    const verb = OP_VERB[op.op]?.(ref, op) ?? `${ref} змінити`;
+    const text = op.new_text ?? op.text;
+    const indent = '   ';
+    const quoted = text
+      ? '\n' + indent + '«' + text.trim().split('\n').join('\n' + indent) + '»;'
+      : ';';
+    return `${i + 1}) ${verb}:${quoted}`;
+  }).join('\n\n');
+
+  return `${preamble}\n\n${body}`;
+}
+
 // ---- Terminology drift ----
 
 export interface DeprecatedTerm {
