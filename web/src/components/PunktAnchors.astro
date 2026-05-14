@@ -1,0 +1,188 @@
+---
+// Two behaviors on content pages:
+//   1. Each <a id="pN.M"> anchor gets a hover-revealed "#" copy-link
+//      pill next to its adjacent heading. Click → copies full URL with
+//      anchor + briefly shows "скопійовано".
+//   2. Text references like "пункт N.M" / "пункту N.M" / "підпункту N.M.K"
+//      get auto-linked to #pN.M on the current page (when that anchor
+//      exists). Cross-page references are left as plain text.
+---
+<script is:inline>
+(function() {
+  if (typeof document === 'undefined') return;
+  const article = document.querySelector('article.prose-doc');
+  if (!article) return;
+
+  // ---- 1) Copy-link pills ----
+  const anchors = article.querySelectorAll('a[id^="p"]');
+  anchors.forEach(a => {
+    const id = a.id;
+    if (!/^p\d/.test(id)) return;
+    // Find the heading immediately after this anchor (skipping whitespace nodes).
+    let next = a.nextElementSibling;
+    while (next && /^(BR|HR)$/.test(next.tagName)) next = next.nextElementSibling;
+    if (!next) return;
+    if (!/^H[1-6]$/.test(next.tagName)) return;
+    if (next.querySelector('.copy-id-pill')) return;
+
+    const pill = document.createElement('button');
+    pill.type = 'button';
+    pill.className = 'copy-id-pill';
+    pill.setAttribute('aria-label', `Скопіювати посилання на ${id}`);
+    pill.title = `Скопіювати посилання на пункт ${id.slice(1)}`;
+    pill.textContent = '#';
+    pill.addEventListener('click', (ev) => {
+      ev.preventDefault();
+      const url = location.origin + location.pathname + '#' + id;
+      const done = () => {
+        pill.classList.add('copied');
+        const orig = pill.textContent;
+        pill.textContent = '✓';
+        setTimeout(() => {
+          pill.classList.remove('copied');
+          pill.textContent = orig;
+        }, 1200);
+      };
+      if (navigator.clipboard?.writeText) {
+        navigator.clipboard.writeText(url).then(done, () => {
+          // fallback
+          const ta = document.createElement('textarea');
+          ta.value = url;
+          document.body.appendChild(ta);
+          ta.select();
+          try { document.execCommand('copy'); done(); } catch (_e) {}
+          document.body.removeChild(ta);
+        });
+      } else {
+        done();
+      }
+      // Update URL bar too (so user can share even without copy)
+      history.replaceState(null, '', '#' + id);
+    });
+    next.appendChild(pill);
+  });
+
+  // ---- 2) Auto-linker for "пункт N.M" references ----
+  const anchorIds = new Set(Array.from(anchors).map(a => a.id));
+  if (!anchorIds.size) return;
+
+  // Matches: пункт, пункту, пункті, пунктом, пунктів, пунктами, пунктах,
+  //          підпункт + variants. Then number.number(.number)?
+  const refRe = /(п[іи]д)?(пункт)(а|у|і|ом|ів|ами|ах|и)?\s+(\d+\.\d+(?:\.\d+)?)/giu;
+
+  const SKIP = new Set(['A','ABBR','CODE','PRE','SCRIPT','STYLE','BUTTON']);
+  function inSkip(node) {
+    let p = node.parentElement;
+    while (p && p !== article) {
+      if (SKIP.has(p.tagName)) return true;
+      if (p.classList?.contains('no-autolink')) return true;
+      p = p.parentElement;
+    }
+    return false;
+  }
+
+  // Collect text nodes upfront so we don't mutate during iteration.
+  const walker = document.createTreeWalker(article, NodeFilter.SHOW_TEXT);
+  const nodes = [];
+  let n;
+  while ((n = walker.nextNode())) nodes.push(n);
+
+  nodes.forEach(node => {
+    if (inSkip(node)) return;
+    const text = node.nodeValue;
+    if (!text || text.length < 5) return;
+    refRe.lastIndex = 0;
+    if (!refRe.test(text)) return;
+    refRe.lastIndex = 0;
+
+    const frag = document.createDocumentFragment();
+    let last = 0, m;
+    while ((m = refRe.exec(text))) {
+      const num = m[4];                          // "1.2" or "2.3.1"
+      const targetId = 'p' + num;
+      const isLocal = anchorIds.has(targetId);
+      const fullMatch = m[0];
+      const start = m.index;
+
+      if (start > last) {
+        frag.appendChild(document.createTextNode(text.slice(last, start)));
+      }
+      if (isLocal) {
+        const a = document.createElement('a');
+        a.href = '#' + targetId;
+        a.className = 'punkt-ref';
+        a.textContent = fullMatch;
+        a.title = `На цій сторінці: пункт ${num}`;
+        frag.appendChild(a);
+      } else {
+        frag.appendChild(document.createTextNode(fullMatch));
+      }
+      last = start + fullMatch.length;
+    }
+    if (last < text.length) {
+      frag.appendChild(document.createTextNode(text.slice(last)));
+    }
+    node.parentNode.replaceChild(frag, node);
+  });
+})();
+</script>
+
+<style>
+  :global(.copy-id-pill) {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.4em;
+    height: 1.4em;
+    margin-left: 0.4em;
+    padding: 0;
+    border: none;
+    background: transparent;
+    color: var(--color-ink-300, #c4c4d0);
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 0.65em;
+    font-weight: 600;
+    line-height: 1;
+    border-radius: 0.25em;
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity 0.15s, color 0.15s, background 0.15s;
+    vertical-align: middle;
+  }
+  :global(h1:hover .copy-id-pill),
+  :global(h2:hover .copy-id-pill),
+  :global(h3:hover .copy-id-pill),
+  :global(h4:hover .copy-id-pill),
+  :global(h5:hover .copy-id-pill),
+  :global(h6:hover .copy-id-pill),
+  :global(.copy-id-pill:focus-visible) {
+    opacity: 1;
+  }
+  :global(.copy-id-pill:hover) {
+    color: var(--color-accent-500, #7253ed);
+    background: var(--color-accent-50, #f5f3ff);
+  }
+  :global(.dark .copy-id-pill:hover) {
+    background: rgba(114, 83, 237, 0.12);
+  }
+  :global(.copy-id-pill.copied) {
+    color: var(--color-accent-600, #5b3fd9);
+    opacity: 1;
+  }
+  :global(.punkt-ref) {
+    color: var(--color-accent-600, #5b3fd9);
+    text-decoration: none;
+    border-bottom: 1px dotted currentColor;
+    transition: color 0.15s, border-color 0.15s;
+  }
+  :global(.punkt-ref:hover) {
+    color: var(--color-accent-700, #4a30b8);
+    border-bottom-style: solid;
+  }
+  :global(.dark .punkt-ref) {
+    color: var(--color-accent-300, #b8a4ff);
+  }
+  :global(.dark .punkt-ref:hover) {
+    color: var(--color-accent-200, #d4c5ff);
+  }
+</style>

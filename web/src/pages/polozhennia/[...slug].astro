@@ -1,6 +1,7 @@
 ---
 import Layout from '../../layouts/Layout.astro';
 import AmendmentHistory from '../../components/AmendmentHistory.astro';
+import PunktAnchors from '../../components/PunktAnchors.astro';
 import { getCollection, render } from 'astro:content';
 
 export async function getStaticPaths() {
@@ -45,6 +46,8 @@ const githubEditUrl = `https://github.com/workflowcat/nakaz-402/edit/main/polozh
   <article class="prose-doc">
     <Content />
   </article>
+
+  <PunktAnchors />
 
   <div class="mt-8 pt-6 border-t border-ink-200 dark:border-ink-800 flex flex-wrap gap-3">
     <a href={githubEditUrl} target="_blank" rel="noopener" class="text-sm inline-flex items-center gap-2 px-3 py-1.5 rounded-md border border-ink-200 dark:border-ink-700 hover:border-accent-500 hover:text-accent-600">
