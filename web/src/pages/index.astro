@@ -67,4 +67,44 @@ const filled = realChapters.filter(c => !c.data.stub);
     </ul>
     <a href="/polozhennia/" class="inline-block mt-4 text-sm text-accent-600 dark:text-accent-300 hover:underline">Усі {realChapters.length} глав →</a>
   </section>
+
+  <section class="mt-16">
+    <h2 class="text-xl font-bold tracking-tight mb-2 pt-3 border-t border-ink-200 dark:border-ink-800 relative">
+      <span class="absolute -top-px left-0 w-9 h-px bg-accent-500"></span>
+      Для інших інструментів
+    </h2>
+    <p class="text-sm text-ink-500 mb-5">Усе під CC0. Без ключів, без rate-limit. Серверна частина — статичні файли на CDN.</p>
+    <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+      <a href="/api/docs/" class="block p-4 rounded-md border border-ink-200 dark:border-ink-800 hover:border-accent-500 hover:bg-ink-50 dark:hover:bg-ink-900 transition-colors">
+        <div class="text-sm font-mono text-accent-600 dark:text-accent-300 mb-1">📡 JSON API</div>
+        <div class="font-medium mb-1">/api/</div>
+        <div class="text-xs text-ink-500">OpenAPI 3.1 · CORS-open · ~10 ендпоінтів</div>
+      </a>
+      <a href="/embed/" class="block p-4 rounded-md border border-ink-200 dark:border-ink-800 hover:border-accent-500 hover:bg-ink-50 dark:hover:bg-ink-900 transition-colors">
+        <div class="text-sm font-mono text-accent-600 dark:text-accent-300 mb-1">🧩 Embed widget</div>
+        <div class="font-medium mb-1">&lt;nakaz-402-punkt&gt;</div>
+        <div class="text-xs text-ink-500">Один script-тег. Shadow DOM. Темна тема.</div>
+      </a>
+      <a href="https://github.com/workflowcat/nakaz-402/tree/main/web/packages/nakaz-402-mcp" target="_blank" rel="noopener" class="block p-4 rounded-md border border-ink-200 dark:border-ink-800 hover:border-accent-500 hover:bg-ink-50 dark:hover:bg-ink-900 transition-colors">
+        <div class="text-sm font-mono text-accent-600 dark:text-accent-300 mb-1">🤖 MCP server</div>
+        <div class="font-medium mb-1">nakaz-402-mcp</div>
+        <div class="text-xs text-ink-500">Запитуйте Claude / Cursor / Zed простою мовою</div>
+      </a>
+      <a href="https://github.com/workflowcat/nakaz-402/tree/main/web/packages/nakaz-402" target="_blank" rel="noopener" class="block p-4 rounded-md border border-ink-200 dark:border-ink-800 hover:border-accent-500 hover:bg-ink-50 dark:hover:bg-ink-900 transition-colors">
+        <div class="text-sm font-mono text-accent-600 dark:text-accent-300 mb-1">📦 npm package</div>
+        <div class="font-medium mb-1">nakaz-402</div>
+        <div class="text-xs text-ink-500">Типовий клієнт. Zero deps. Browser / Node / Deno / Bun.</div>
+      </a>
+      <a href="/changes/rss.xml" class="block p-4 rounded-md border border-ink-200 dark:border-ink-800 hover:border-accent-500 hover:bg-ink-50 dark:hover:bg-ink-900 transition-colors">
+        <div class="text-sm font-mono text-accent-600 dark:text-accent-300 mb-1">📰 RSS / Atom</div>
+        <div class="font-medium mb-1">/changes/rss.xml</div>
+        <div class="text-xs text-ink-500">Підпишіться на нові амендменти у своєму ріді</div>
+      </a>
+      <a href="https://github.com/workflowcat/nakaz-402" target="_blank" rel="noopener" class="block p-4 rounded-md border border-ink-200 dark:border-ink-800 hover:border-accent-500 hover:bg-ink-50 dark:hover:bg-ink-900 transition-colors">
+        <div class="text-sm font-mono text-accent-600 dark:text-accent-300 mb-1">🔧 GitHub</div>
+        <div class="font-medium mb-1">workflowcat/nakaz-402</div>
+        <div class="text-xs text-ink-500">Issues, PRs, raw Markdown — рідне ваше середовище</div>
+      </a>
+    </div>
+  </section>
 </Layout>

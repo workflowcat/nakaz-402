@@ -105,14 +105,16 @@ const ldData = jsonLd ?? defaultLd;
       </div>
     </main>
     <footer class="border-t border-ink-200 dark:border-ink-800 mt-12 py-6 text-sm text-ink-500">
-      <div class="max-w-7xl mx-auto px-5 flex flex-wrap gap-4 justify-between">
-        <p>
-          Авторитетним джерелом залишається <a href="https://zakon.rada.gov.ua/laws/show/z1109-08" class="underline hover:text-accent-500" target="_blank" rel="noopener">текст на zakon.rada.gov.ua</a>. Цей репо — інженерна реплікація під CC0.
+      <div class="max-w-7xl mx-auto px-5 flex flex-wrap gap-6 justify-between">
+        <p class="max-w-md leading-relaxed">
+          Авторитетним джерелом залишається <a href="https://zakon.rada.gov.ua/laws/show/z1109-08" class="underline hover:text-accent-500" target="_blank" rel="noopener">текст на zakon.rada.gov.ua</a>.<br/>Цей репо — інженерна реплікація під CC0.
         </p>
-        <div class="flex gap-3">
+        <div class="flex flex-wrap gap-x-4 gap-y-1">
           <a href="https://github.com/workflowcat/nakaz-402" class="hover:text-accent-500" target="_blank" rel="noopener">GitHub</a>
-          <span class="opacity-50">·</span>
           <a href="/changes/" class="hover:text-accent-500">Зміни</a>
+          <a href="/api/docs/" class="hover:text-accent-500">API</a>
+          <a href="/embed/" class="hover:text-accent-500">Embed</a>
+          <a href="/changes/rss.xml" class="hover:text-accent-500">RSS</a>
         </div>
       </div>
     </footer>
