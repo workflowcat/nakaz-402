@@ -28,6 +28,8 @@ amended_by:
 
 # Глава 2. Органи військово-лікарської експертизи
 
+{% include amendment-history.html %}
+
 <a id="p2.1"></a>
 ## 2.1.
 

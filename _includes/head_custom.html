@@ -1,0 +1,99 @@
+{% comment %}
+  Глобальні style-кастомізації:
+  1. Кольорове кодування блок-цитат з маркерами амендментів за роком наказу.
+  2. Стилі для відкритих/підсвічених посилань на rada.gov.ua.
+{% endcomment %}
+
+<style>
+  /* Маркер амендменту — блок-цитата з посиланням на zNNNN-YY */
+  blockquote.amend-marker {
+    font-size: 0.85rem;
+    border-left: 3px solid #c8c8c8;
+    background: var(--code-background-color, #fafafa);
+    padding: 0.45rem 0.8rem;
+    margin: 0.5rem 0;
+    color: var(--body-text-color);
+    opacity: 0.85;
+  }
+  blockquote.amend-marker[data-year="2025"] {
+    border-left-color: #e07c3e;
+    background: #fff5ec;
+  }
+  blockquote.amend-marker[data-year="2024"] {
+    border-left-color: #c09c54;
+    background: #fcf6e8;
+  }
+  blockquote.amend-marker[data-year="2023"] {
+    border-left-color: #8a9aa8;
+  }
+  blockquote.amend-marker em {
+    font-style: normal;
+  }
+  blockquote.amend-marker a[href*="zakon.rada.gov.ua/laws/show/z"] {
+    font-family: var(--mono-font-family, monospace);
+    font-size: 0.78rem;
+  }
+
+  /* Свіжість для всього абзацу, що містить нещодавно змінений маркер */
+  .punkt-fresh-2025 { background: linear-gradient(90deg, rgba(224, 124, 62, 0.06), transparent 40%); }
+  .punkt-fresh-2024 { background: linear-gradient(90deg, rgba(192, 156, 84, 0.04), transparent 40%); }
+
+  /* Бейдж року біля заголовку пункту */
+  .freshness-badge {
+    display: inline-block;
+    margin-left: 0.5rem;
+    font-size: 0.7rem;
+    padding: 1px 6px;
+    border-radius: 8px;
+    vertical-align: middle;
+    font-family: var(--mono-font-family, monospace);
+  }
+  .freshness-badge.y-2025 { background: #fde6c8; color: #8a5a1a; }
+  .freshness-badge.y-2024 { background: #f0e8d4; color: #6a5018; }
+</style>
+
+<script>
+(function() {
+  function applyFreshness() {
+    // 1. Знайти всі blockquote, що мають у текстовому вмісті посилання на наказ
+    //    у форматі zNNNN-YY (наш стандарт реєстрації Мін'юсту).
+    const yearRegex = /z\d{3,5}-(\d{2})/g;
+    document.querySelectorAll('blockquote').forEach(bq => {
+      const matches = [...bq.textContent.matchAll(yearRegex)];
+      if (matches.length === 0) return;
+      bq.classList.add('amend-marker');
+      // Беремо найновіший рік серед посилань — він репрезентативний.
+      let maxYear = 0;
+      matches.forEach(m => {
+        const yy = parseInt(m[1], 10);
+        const full = yy >= 80 ? 1900 + yy : 2000 + yy;
+        if (full > maxYear) maxYear = full;
+      });
+      bq.dataset.year = maxYear;
+
+      // 2. Підсвітити батьківський punkt (h2/h3) свіжістю.
+      if (maxYear >= 2024) {
+        // знайти найближчий заголовок вище — h2 або h3
+        let prev = bq.previousElementSibling;
+        let head = null;
+        while (prev) {
+          if (prev.tagName && /^H[23]$/.test(prev.tagName)) { head = prev; break; }
+          prev = prev.previousElementSibling;
+        }
+        if (head && !head.querySelector('.freshness-badge')) {
+          const badge = document.createElement('span');
+          badge.className = 'freshness-badge y-' + maxYear;
+          badge.textContent = maxYear + ' ✦';
+          badge.title = 'Цей пункт змінено у ' + maxYear + ' році';
+          head.appendChild(badge);
+        }
+      }
+    });
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', applyFreshness);
+  } else {
+    applyFreshness();
+  }
+})();
+</script>

@@ -23,6 +23,8 @@ amended_by:
 
 # Глава 1. Загальні положення
 
+{% include amendment-history.html %}
+
 <a id="p1.1"></a>
 ## 1.1.
 
