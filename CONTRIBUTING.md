@@ -1,6 +1,6 @@
 ---
-title: CONTRIBUTING
-nav_order: 11
+title: Contributing
+nav_exclude: true
 ---
 
 # Як контрибутити

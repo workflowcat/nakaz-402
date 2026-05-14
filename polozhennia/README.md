@@ -6,7 +6,7 @@ title: "Положення"
 official_title: "Положення про військово-лікарську експертизу в Збройних Силах України"
 source: https://zakon.rada.gov.ua/laws/show/z1109-08
 status: active
-nav_order: 5
+nav_order: 4
 has_children: true
 permalink: /polozhennia/
 ---

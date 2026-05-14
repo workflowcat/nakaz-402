@@ -1,6 +1,7 @@
 ---
 title: Глосарій
-nav_order: 8
+nav_exclude: true
+description: "Тлумачення абревіатур. Працюють як hover-tooltips на всьому сайті."
 ---
 
 # Глосарій

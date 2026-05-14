@@ -1,6 +1,6 @@
 ---
 title: JSON API
-nav_order: 13
+nav_order: 7
 permalink: /api-docs/
 ---
 

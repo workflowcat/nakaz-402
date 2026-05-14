@@ -43,7 +43,7 @@ def generate(data: dict) -> str:
     lines: list[str] = []
     lines.append("---")
     lines.append("title: CHANGELOG")
-    lines.append("nav_order: 7")
+    lines.append("nav_order: 9")
     lines.append("---")
     lines.append("")
     lines.append("# CHANGELOG")

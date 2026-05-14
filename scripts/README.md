@@ -1,6 +1,6 @@
 ---
 title: Скрипти
-nav_order: 10
+nav_exclude: true
 ---
 
 # scripts/

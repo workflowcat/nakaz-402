@@ -2,124 +2,100 @@
 title: Головна
 layout: default
 nav_order: 1
-description: "Машино-читабельна git-редакція Наказу МОУ № 402 про військово-лікарську експертизу"
+description: "Наказ МОУ № 402 у git: машино-читабельний, з історією, з інструментами"
 permalink: /
 ---
 
-# Наказ Міноборони № 402 у git
-{: .fs-9 }
+<div class="hero">
+<p class="hero-eyebrow">Наказ МОУ № 402 · 14.08.2008 · z1109-08</p>
+<h1>Військово-лікарська експертиза як дані, а не як docx</h1>
+<p class="hero-lede">
+Той самий нормативний акт, але кожен пункт має стабільний id, кожна правка
+видима у git, а Розклад хвороб — таблиця, з якої можна порахувати придатність
+скриптом.
+</p>
+<div class="hero-cta">
+  <a class="primary" href="{{ '/changes/' | relative_url }}">📊 Усі зміни</a>
+  <a href="{{ '/nakaz.html' | relative_url }}">Прочитати наказ</a>
+  <a href="{{ '/examples/drafts/' | relative_url }}">Зразки DOCX-драфтів</a>
+  <a href="https://github.com/workflowcat/nakaz-402" target="_blank" rel="noopener">GitHub ↗</a>
+</div>
+</div>
 
-Спроба перевести **Наказ Міністерства оборони України № 402 від 14.08.2008**
-«Про затвердження Положення про військово-лікарську експертизу в Збройних
-Силах України» у формат, з яким зручно працювати інженерам, юристам і
-медикам одночасно.
-{: .fs-6 .fw-300 }
+{% assign amendments = site.data.amendments.amendments | sort: "signed_at" | reverse %}
+{% assign total = amendments | size %}
+{% assign last = amendments | first %}
+{% assign first = amendments | last %}
+{% assign affects_total = 0 %}
+{% for a in amendments %}{% if a.affects %}{% assign affects_total = affects_total | plus: a.affects.size %}{% endif %}{% endfor %}
+{% assign year_now = "now" | date: "%Y" %}
+{% assign last_year = last.signed_at | date: "%Y" %}
+{% assign year_diff = year_now | minus: last_year %}
 
-[📊 Управління змінами](changes.md){: .btn .btn-primary .fs-5 .mb-4 .mb-md-0 .mr-2 }
-[Як це працює](docs/how-it-works.md){: .btn .fs-5 .mb-4 .mb-md-0 .mr-2 }
-[Архітектура](docs/architecture.md){: .btn .fs-5 .mb-4 .mb-md-0 .mr-2 }
-[Тур по амендменту](docs/walkthrough.md){: .btn .fs-5 .mb-4 .mb-md-0 .mr-2 }
-[Офіційний ↗](https://zakon.rada.gov.ua/laws/show/z1109-08){: .btn .fs-5 .mb-4 .mb-md-0 }
+<div class="stats">
+  <div class="stat">
+    <span class="value">{{ total }}</span>
+    <span class="label">амендментів</span>
+  </div>
+  <div class="stat">
+    <span class="value">{{ affects_total }}</span>
+    <span class="label">точкових правок</span>
+  </div>
+  <div class="stat">
+    <span class="value">{{ first.signed_at | date: "%Y" }}—{{ last_year }}</span>
+    <span class="label">діапазон років</span>
+  </div>
+  <div class="stat">
+    <span class="value">{{ last.signed_at | date: "%d.%m.%Y" }}</span>
+    <span class="label">останній амендмент</span>
+  </div>
+</div>
+
+## Останні 5 амендментів
+
+<div class="mini-feed">
+{% assign last_five = amendments | slice: 0, 5 %}
+{% for a in last_five %}
+<div class="amendment-card" data-year="{{ a.signed_at | date: '%Y' }}">
+  <div class="amendment-head">
+    <span class="amendment-date">{{ a.signed_at | date: "%d.%m.%Y" }}</span>
+    <span class="amendment-order">№ {{ a.order }}</span>
+    <span class="amendment-reg"><a href="https://zakon.rada.gov.ua/laws/show/{{ a.registration }}" target="_blank" rel="noopener">{{ a.registration }}</a></span>
+  </div>
+  <div class="amendment-summary">{{ a.summary | strip_newlines }}</div>
+  {% if a.affects and a.affects.size > 0 %}
+  <div class="affects-chips">
+    {% for aff in a.affects %}
+    <span class="affects-chip" data-op="{{ aff.op }}"><code>{{ aff.id }}</code><span class="op">{{ aff.op }}</span></span>
+    {% endfor %}
+  </div>
+  {% endif %}
+</div>
+{% endfor %}
+</div>
+
+[Усі {{ total }} амендментів →]({{ '/changes/' | relative_url }})
+
+---
+
+## Що це дає на практиці
+
+**Юрист** хоче подивитись, що змінив наказ № 262 від 2024. Замість порівнювати дві pdf — відкриває [/changes/](/changes/), фільтрує, бачить chips з конкретними `id` зачеплених пунктів і одним кліком переходить.
+
+**Розробник** хоче вбудувати «калькулятор придатності» в HR-систему. Робить `GET /api/dodatok-1/stattia-42.json` — і у відповіді машино-читабельна таблиця діагноз → категорія за всіма графами.
+
+**Нормотворець** хоче скласти проєкт нового наказу-зміни. Запускає `make draft AMENDMENT=z0329-25` — отримує готовий .docx із заповненою порівняльною таблицею, залишається тільки вписати новий текст.
+
+**Контриб'ютор** при виході справжнього наказу-зміни: один PR — оновлює YAML, лінтер перевіряє узгодженість, CHANGELOG регенерується автоматично. Все.
 
 ---
 
-## Що це і навіщо
+## Як це працює
 
-Наказ 402 — це **24 категорії осіб** на медогляді, **5+ великих додатків**
-(Розклад хвороб, ТДВ, форми довідок), і **20+ наказів-змін** з 2008 року.
-Кожна зміна — окремий наказ-патч. Щоб зрозуміти, що в Положенні зараз — треба
-читати десятки документів і подумки робити merge.
+Кожен пункт = окремий файл з YAML-frontmatter (`id`, `status`, `amended_by`). Глава Положення = один .md з якорями на пункти. Розклад хвороб = YAML по статті. Метадані амендментів = `meta/amendments.yaml`. Сайт, CHANGELOG, JSON-API, DOCX-драфти і калькулятор — це **функції** від цих даних.
 
-Цей сайт — спроба замінити цей режим роботи на той, який ми звикли бачити в
-розробці ПЗ:
-
-| Класичний НПА                            | Цей репозиторій                          |
-| ---------------------------------------- | ---------------------------------------- |
-| Один великий .doc / HTML                 | Розрізаний по розділах і додатках        |
-| Пункти ідентифікуються словами в тексті  | Кожен пункт має стабільний `id` у YAML   |
-| Зміни — окремими наказами-патчами        | Зміни — PR з diff-ом, тегами на редакції |
-| Списки/таблиці захардкоджені в положенні | Винесені в `dodatky/` як машинні конфіги |
-| Знайти, що чіпав наказ № X — складно     | `meta/amendments.yaml` + git blame       |
-
----
-
-## Куди далі
-
-- **Сам наказ** — [короткі 4 пункти](nakaz.md)
-- **Положення** — [зміст](polozhennia/) (Розділ I + скелет решти)
-- **Додатки** — [Розклад хвороб як дані](dodatky/) (демо-стаття + схема)
-- **Метадані** — [журнал амендментів](meta/amendments.yaml), [глосарій](meta/glossary.md), [схема репо](meta/schema.md)
-- **Зміни** — [CHANGELOG для людей](CHANGELOG.md)
-
----
-
-## Як взаємодіяти
-
-**Читач** заходить на сайт і навігує:
-
-1. Зміст у лівій панелі (всі розділи Положення та додатки).
-2. Пошук угорі (`/`) — повнотекстовий по всіх сторінках.
-3. На сторінці кожного пункту — frontmatter з історією амендментів: видно,
-   хто і коли цей пункт чіпав, з посиланнями на офіційні редакції.
-
-**Юрист / методолог** хоче побачити, що змінив конкретний наказ:
-
-1. Відкриває [meta/amendments.yaml](meta/amendments.yaml).
-2. Знаходить запис наказу-зміни — там `affects: [<id пунктів>]`.
-3. Переходить за `id` на конкретний пункт — у його frontmatter видно ту саму
-   правку у списку `amended_by`.
-
-**Розробник / data engineer** хоче дані для свого сервісу:
-
-1. Парсить `meta/amendments.yaml` як YAML — отримує машино-читабельний
-   журнал історії.
-2. Парсить `dodatky/01-rozklad-khvorob/stattia-*.yaml` як YAML — отримує
-   таблицю «діагноз → категорія придатності» для калькулятора. Або просто
-   запускає готовий [`scripts/fitness_calculator.py`](scripts/fitness_calculator.py)
-   (CLI з `--json` режимом).
-3. Frontmatter сторінок `polozhennia/**/*.md` — теж YAML, можна вичитати
-   через `python-frontmatter` / `gray-matter`.
-
-```bash
-# Демо: дізнатись категорію за статтею + підпунктом + графою
-$ python3 scripts/fitness_calculator.py --stattia 1 --punkt б --graf III
-Стаття 1: Туберкульоз органів дихання  [active]
-  Підпункт «б»: активний обмежений, із сповільненою динамікою...
-  Графа III (Військовослужбовці контрактної служби, офіцери): Б-4 — Придатний до служби з обмеженнями за видом
-```
-
-**Юрист / нормотворець** хоче швидко скласти проєкт наказу-зміни у Word:
-
-```bash
-make draft AMENDMENT=z0329-25
-# → examples/drafts/draft-153-z0329-25.docx
-```
-
-Готовий шаблон у форматі МОУ: шапка, преамбула, тіло наказу за правильним
-формулюванням (доповнити / викласти в редакції / виключити), порівняльна
-таблиця з підтягнутою поточною редакцією. Залишається тільки вписати
-новий текст і поставити підпис. [3 зразки готових draft-ів](examples/drafts/)
-з реальних амендментів — як референс.
-
-**Контрибутор** при виході нового наказу-зміни:
-
-1. Створює гілку `amendment/<номер>-<дата>`.
-2. Один PR = один наказ. У PR description — посилання на офіційний текст
-   і коротке резюме.
-3. У кожному зміненому файлі додає запис у `amended_by` frontmatter.
-4. Додає запис у `meta/amendments.yaml`.
-5. CI-перевірка (TODO): валідує frontmatter, перевіряє, що для кожної правки
-   тексту є супутній запис в `amended_by`.
-6. Мерж → тег `redaction/<дата>` → нова «офіційна» редакція в репо.
-
----
+[Тур по реальному амендменту →]({{ '/docs/walkthrough/' | relative_url }})
 
 ## Юридичне джерело
 
-Авторитетним залишається текст на
-[zakon.rada.gov.ua/laws/show/z1109-08](https://zakon.rada.gov.ua/laws/show/z1109-08).
-Цей репозиторій — інженерна реплікація для зручності роботи з документом.
-У кожному файлі — `source:` із посиланням на фрагмент офіційного тексту.
-
-Цей сайт — open source, ліцензія [CC0](LICENSE) (тексти НПА в Україні є
-public domain за статтею 10 Закону «Про авторське право і суміжні права»).
+Авторитетним залишається текст на [zakon.rada.gov.ua](https://zakon.rada.gov.ua/laws/show/z1109-08). Цей репозиторій — інженерна реплікація.

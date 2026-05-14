@@ -1,0 +1,492 @@
+---
+# Jekyll: трикутна frontmatter необхідна, щоб запустилось Sass-processing.
+---
+
+// ──────────────────────────────────────────────────────────────────
+// Палітра і токени
+// ──────────────────────────────────────────────────────────────────
+
+:root {
+  --accent: #7253ed;
+  --accent-soft: #b9a8e8;
+  --accent-bg: rgba(114, 83, 237, 0.06);
+  --fresh-2025: #e07c3e;
+  --fresh-2024: #c09c54;
+  --fresh-old: #9ca3af;
+  --op-insert: #2d6a31;
+  --op-insert-bg: #d8efd9;
+  --op-redaction: #8a5a1a;
+  --op-redaction-bg: #fde6c8;
+  --op-edit: #555;
+  --op-edit-bg: #e3e6f0;
+  --op-repeal: #7a2222;
+  --op-repeal-bg: #f6d4d4;
+  --border: #e5e5ea;
+  --surface: #fafafa;
+  --surface-2: #f5f6fa;
+}
+
+// ──────────────────────────────────────────────────────────────────
+// Hero — для index.md
+// ──────────────────────────────────────────────────────────────────
+
+.hero {
+  margin: 1.5rem 0 2rem;
+}
+.hero-eyebrow {
+  font-family: var(--mono-font-family, monospace);
+  font-size: 0.78rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin: 0 0 0.5rem;
+}
+.hero h1 {
+  font-size: 2.4rem;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  margin: 0 0 1rem;
+  font-weight: 700;
+}
+.hero-lede {
+  font-size: 1.1rem;
+  line-height: 1.5;
+  color: var(--body-text-color);
+  opacity: 0.85;
+  margin: 0 0 1.5rem;
+  max-width: 56ch;
+}
+.hero-cta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin: 1.25rem 0 0;
+}
+.hero-cta a {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.55rem 1.1rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  text-decoration: none;
+  font-weight: 500;
+  background: var(--body-background-color);
+  transition: all 0.15s;
+}
+.hero-cta a:hover {
+  background: var(--accent-bg);
+  border-color: var(--accent-soft);
+}
+.hero-cta a.primary {
+  background: var(--accent);
+  color: white;
+  border-color: var(--accent);
+}
+.hero-cta a.primary:hover {
+  filter: brightness(1.08);
+}
+
+// ──────────────────────────────────────────────────────────────────
+// Stat cards (загальні для homepage + /changes/)
+// ──────────────────────────────────────────────────────────────────
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 1rem;
+  margin: 1.5rem 0;
+}
+.stat {
+  background: var(--surface-2);
+  border-left: 3px solid var(--accent);
+  padding: 0.85rem 1.1rem;
+  border-radius: 4px;
+}
+.stat .value {
+  display: block;
+  font-size: 1.8rem;
+  line-height: 1.05;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+.stat .label {
+  display: block;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  opacity: 0.65;
+  margin-top: 0.25rem;
+}
+
+// ──────────────────────────────────────────────────────────────────
+// Year blocks і amendment cards (для /changes/)
+// ──────────────────────────────────────────────────────────────────
+
+.year-block {
+  margin: 2rem 0 1rem;
+  padding-bottom: 0.25rem;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: baseline;
+  gap: 0.75rem;
+}
+.year-block h2 {
+  margin: 0;
+  font-size: 1.5rem;
+  letter-spacing: -0.01em;
+}
+.year-block .year-count {
+  font-size: 0.8rem;
+  opacity: 0.5;
+}
+.year-block .year-bar {
+  flex: 1;
+  height: 4px;
+  background: linear-gradient(90deg, var(--accent), transparent);
+  border-radius: 2px;
+  opacity: 0.4;
+  max-width: 220px;
+}
+
+.amendment-card {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0.85rem 1rem;
+  margin: 0.5rem 0;
+  background: var(--body-background-color);
+  transition: box-shadow 0.15s, border-color 0.15s;
+}
+.amendment-card:hover {
+  box-shadow: 0 2px 12px rgba(0,0,0,0.05);
+  border-color: var(--accent-soft);
+}
+.amendment-card[data-year="2025"] { border-left: 3px solid var(--fresh-2025); }
+.amendment-card[data-year="2024"] { border-left: 3px solid var(--fresh-2024); }
+.amendment-card[data-year^="20"]  { border-left: 3px solid var(--fresh-old); }
+.amendment-card[data-year="2024"], .amendment-card[data-year="2025"] {
+  // Перевизначаємо для свіжіших років
+  border-left-width: 3px;
+}
+.amendment-head {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.3rem;
+}
+.amendment-date {
+  font-family: var(--mono-font-family, monospace);
+  font-size: 0.82rem;
+  opacity: 0.65;
+}
+.amendment-order {
+  font-weight: 600;
+  font-size: 1rem;
+}
+.amendment-reg a {
+  font-family: var(--mono-font-family, monospace);
+  font-size: 0.78rem;
+  padding: 1px 7px;
+  background: var(--surface-2);
+  border-radius: 3px;
+  text-decoration: none;
+  color: var(--body-text-color);
+}
+.amendment-reg a:hover { background: var(--accent-bg); color: var(--accent); }
+.amendment-summary {
+  font-size: 0.94rem;
+  line-height: 1.45;
+  margin: 0.2rem 0 0.4rem;
+}
+
+.affects-chips {
+  display: flex;
+  gap: 0.3rem;
+  flex-wrap: wrap;
+  margin-top: 0.35rem;
+}
+.affects-chip {
+  font-family: var(--mono-font-family, monospace);
+  font-size: 0.7rem;
+  padding: 2px 7px;
+  border-radius: 10px;
+  background: var(--surface-2);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.affects-chip .op {
+  opacity: 0.55;
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.affects-chip[data-op="insert"]    { background: var(--op-insert-bg); color: var(--op-insert); }
+.affects-chip[data-op="redaction"] { background: var(--op-redaction-bg); color: var(--op-redaction); }
+.affects-chip[data-op="edit"]      { background: var(--op-edit-bg); color: var(--op-edit); }
+.affects-chip[data-op="repeal"]    { background: var(--op-repeal-bg); color: var(--op-repeal); }
+
+// ──────────────────────────────────────────────────────────────────
+// Фільтри (для /changes/)
+// ──────────────────────────────────────────────────────────────────
+
+.filters {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  align-items: center;
+  margin: 1rem 0 1.5rem;
+}
+.filters label {
+  font-size: 0.83rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  cursor: pointer;
+  padding: 4px 11px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  user-select: none;
+  background: var(--body-background-color);
+  transition: all 0.12s;
+}
+.filters label.active {
+  background: var(--accent);
+  color: white;
+  border-color: var(--accent);
+}
+.filters input[type="checkbox"] { display: none; }
+.filters .search-box {
+  flex: 1 1 220px;
+  min-width: 200px;
+  padding: 5px 12px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  font-size: 0.85rem;
+  background: var(--body-background-color);
+}
+.filters .search-box:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+.filters small {
+  margin-left: auto;
+  font-size: 0.78rem;
+  opacity: 0.6;
+}
+
+// ──────────────────────────────────────────────────────────────────
+// Amendment marker (blockquote) styling
+// ──────────────────────────────────────────────────────────────────
+
+blockquote.amend-marker {
+  font-size: 0.84rem;
+  border-left: 3px solid var(--fresh-old);
+  background: var(--surface);
+  padding: 0.4rem 0.85rem;
+  margin: 0.5rem 0;
+  opacity: 0.85;
+  border-radius: 0 4px 4px 0;
+}
+blockquote.amend-marker[data-year="2025"] {
+  border-left-color: var(--fresh-2025);
+  background: #fff5ec;
+  opacity: 1;
+}
+blockquote.amend-marker[data-year="2024"] {
+  border-left-color: var(--fresh-2024);
+  background: #fcf6e8;
+  opacity: 0.95;
+}
+blockquote.amend-marker em { font-style: normal; }
+blockquote.amend-marker a[href*="zakon.rada.gov.ua/laws/show/z"] {
+  font-family: var(--mono-font-family, monospace);
+  font-size: 0.78rem;
+}
+
+// Бейдж свіжості біля заголовків
+.freshness-badge {
+  display: inline-block;
+  margin-left: 0.5rem;
+  font-size: 0.7rem;
+  padding: 1px 7px;
+  border-radius: 8px;
+  vertical-align: middle;
+  font-family: var(--mono-font-family, monospace);
+  font-weight: 500;
+  letter-spacing: 0.02em;
+}
+.freshness-badge.y-2025 { background: var(--op-redaction-bg); color: var(--op-redaction); }
+.freshness-badge.y-2024 { background: #f0e8d4; color: #6a5018; }
+
+// ──────────────────────────────────────────────────────────────────
+// Glossary <abbr> tooltips
+// ──────────────────────────────────────────────────────────────────
+
+abbr[title] {
+  text-decoration: underline dotted;
+  text-decoration-color: var(--accent-soft);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+  cursor: help;
+  border: none;
+}
+abbr[title]:hover {
+  text-decoration-color: var(--accent);
+  background: var(--accent-bg);
+}
+
+// ──────────────────────────────────────────────────────────────────
+// Amendment history widget (per-chapter timeline)
+// ──────────────────────────────────────────────────────────────────
+
+.amend-history {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  margin: 1rem 0 1.5rem;
+  background: var(--surface);
+
+  > summary {
+    cursor: pointer;
+    padding: 0.6rem 1rem;
+    font-weight: 500;
+    list-style: none;
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    user-select: none;
+  }
+  > summary::before {
+    content: "▶";
+    font-size: 0.65rem;
+    transition: transform 0.15s;
+    opacity: 0.5;
+  }
+  &[open] > summary::before { transform: rotate(90deg); }
+  .ah-badge {
+    margin-left: auto;
+    font-size: 0.76rem;
+    font-family: var(--mono-font-family, monospace);
+    opacity: 0.6;
+  }
+  .ah-body {
+    padding: 0.25rem 1rem 1rem;
+    border-top: 1px solid var(--border);
+  }
+  .ah-track {
+    position: relative;
+    height: 38px;
+    margin: 0.8rem 0 1rem;
+    background: linear-gradient(90deg, #e0e0e0, #c8c8c8);
+    border-radius: 2px;
+  }
+  .ah-dot {
+    position: absolute;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    border: 2px solid white;
+    cursor: pointer;
+    transition: transform 0.1s;
+  }
+  .ah-dot:hover {
+    transform: translate(-50%, -50%) scale(1.5);
+    z-index: 10;
+  }
+  .ah-dot[data-op="insert"]    { background: var(--op-insert); }
+  .ah-dot[data-op="redaction"] { background: var(--fresh-2025); }
+  .ah-dot[data-op="edit"]      { background: var(--op-edit); }
+  .ah-dot[data-op="repeal"]    { background: #f44336; }
+  .ah-dot[data-op="restore"]   { background: #2196f3; }
+  .ah-tick {
+    position: absolute;
+    top: 100%;
+    transform: translateX(-50%);
+    font-size: 0.65rem;
+    margin-top: 3px;
+    opacity: 0.5;
+    white-space: nowrap;
+  }
+  .ah-list {
+    list-style: none;
+    padding: 0;
+    margin: 0.5rem 0 0;
+    font-size: 0.85rem;
+
+    li {
+      display: flex;
+      align-items: baseline;
+      gap: 0.5rem;
+      padding: 5px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    li:last-child { border-bottom: none; }
+  }
+  .ah-date {
+    font-family: var(--mono-font-family, monospace);
+    font-size: 0.78rem;
+    opacity: 0.7;
+    min-width: 5.5rem;
+  }
+  .ah-op {
+    font-size: 0.68rem;
+    padding: 1px 7px;
+    border-radius: 8px;
+    font-family: var(--mono-font-family, monospace);
+    min-width: 4.5rem;
+    text-align: center;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+  }
+  .ah-op[data-op="insert"]    { background: var(--op-insert-bg); color: var(--op-insert); }
+  .ah-op[data-op="redaction"] { background: var(--op-redaction-bg); color: var(--op-redaction); }
+  .ah-op[data-op="edit"]      { background: var(--op-edit-bg); color: var(--op-edit); }
+  .ah-op[data-op="repeal"]    { background: var(--op-repeal-bg); color: var(--op-repeal); }
+  .ah-order {
+    font-family: var(--mono-font-family, monospace);
+    font-size: 0.78rem;
+  }
+  .ah-scope {
+    opacity: 0.75;
+    flex: 1;
+  }
+}
+
+// ──────────────────────────────────────────────────────────────────
+// Mini-dashboard на homepage
+// ──────────────────────────────────────────────────────────────────
+
+.mini-feed {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.5rem;
+  margin: 1rem 0 2rem;
+}
+
+// ──────────────────────────────────────────────────────────────────
+// Mobile
+// ──────────────────────────────────────────────────────────────────
+
+@media (max-width: 640px) {
+  .hero h1 { font-size: 1.9rem; }
+  .hero-lede { font-size: 1rem; }
+  .stat .value { font-size: 1.5rem; }
+  .filters { gap: 0.35rem; }
+  .filters .search-box { flex-basis: 100%; }
+}
+
+// ──────────────────────────────────────────────────────────────────
+// Print
+// ──────────────────────────────────────────────────────────────────
+
+@media print {
+  .side-bar, .main-header, .filters, .hero-cta, .amend-history > summary::before { display: none !important; }
+  .main-content { max-width: 100%; }
+  .amend-history { border: none; }
+  .amend-history[open] > .ah-body { display: block !important; }
+  .amendment-card { page-break-inside: avoid; }
+  body { font-size: 11pt; }
+}

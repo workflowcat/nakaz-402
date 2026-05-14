@@ -1,6 +1,6 @@
 ---
-title: Зразки draft-DOCX
-nav_order: 14
+title: Зразки DOCX
+nav_order: 8
 permalink: /examples/drafts/
 ---
 

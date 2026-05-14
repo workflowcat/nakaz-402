@@ -1,81 +1,20 @@
 {% comment %}
-  Глобальні style-кастомізації:
-  1. Favicon і theme color.
-  2. Кольорове кодування блок-цитат з маркерами амендментів за роком наказу.
-  3. Бейдж свіжості біля заголовків нещодавно змінених пунктів.
-  4. Glossary tooltips — авто-розпізнавання абревіатур.
+  Глобальні кастомізації:
+  - favicon + theme color
+  - link на скомпільовану таблицю стилів /assets/css/site.css
+  - JS: glossary tooltips + amendment freshness highlighting
 {% endcomment %}
 
 <link rel="icon" type="image/svg+xml" href="{{ '/favicon.svg' | relative_url }}">
 <link rel="mask-icon" href="{{ '/favicon.svg' | relative_url }}" color="#7253ed">
 <meta name="theme-color" content="#7253ed">
 
-<style>
-  /* Маркер амендменту — блок-цитата з посиланням на zNNNN-YY */
-  blockquote.amend-marker {
-    font-size: 0.85rem;
-    border-left: 3px solid #c8c8c8;
-    background: var(--code-background-color, #fafafa);
-    padding: 0.45rem 0.8rem;
-    margin: 0.5rem 0;
-    color: var(--body-text-color);
-    opacity: 0.85;
-  }
-  blockquote.amend-marker[data-year="2025"] {
-    border-left-color: #e07c3e;
-    background: #fff5ec;
-  }
-  blockquote.amend-marker[data-year="2024"] {
-    border-left-color: #c09c54;
-    background: #fcf6e8;
-  }
-  blockquote.amend-marker[data-year="2023"] {
-    border-left-color: #8a9aa8;
-  }
-  blockquote.amend-marker em {
-    font-style: normal;
-  }
-  blockquote.amend-marker a[href*="zakon.rada.gov.ua/laws/show/z"] {
-    font-family: var(--mono-font-family, monospace);
-    font-size: 0.78rem;
-  }
-
-  /* Свіжість для всього абзацу, що містить нещодавно змінений маркер */
-  .punkt-fresh-2025 { background: linear-gradient(90deg, rgba(224, 124, 62, 0.06), transparent 40%); }
-  .punkt-fresh-2024 { background: linear-gradient(90deg, rgba(192, 156, 84, 0.04), transparent 40%); }
-
-  /* Бейдж року біля заголовку пункту */
-  .freshness-badge {
-    display: inline-block;
-    margin-left: 0.5rem;
-    font-size: 0.7rem;
-    padding: 1px 6px;
-    border-radius: 8px;
-    vertical-align: middle;
-    font-family: var(--mono-font-family, monospace);
-  }
-  .freshness-badge.y-2025 { background: #fde6c8; color: #8a5a1a; }
-  .freshness-badge.y-2024 { background: #f0e8d4; color: #6a5018; }
-
-  /* Glossary tooltips — підкреслюємо абревіатури точечним підкресленням */
-  abbr[title] {
-    text-decoration: underline dotted;
-    text-decoration-color: #b9a8e8;
-    text-decoration-thickness: 1px;
-    text-underline-offset: 3px;
-    cursor: help;
-    border: none;
-  }
-  abbr[title]:hover {
-    text-decoration-color: #7253ed;
-    background: rgba(114, 83, 237, 0.06);
-  }
-</style>
+<link rel="stylesheet" href="{{ '/assets/css/site.css' | relative_url }}">
 
 <script>
-// === Glossary tooltips ===
+// ── Glossary tooltips ──
 (function() {
-  const GLOSSARY = {
+  const G = {
     'ЦВЛК': 'Центральна військово-лікарська комісія',
     'ТЦК та СП': 'Територіальний центр комплектування та соціальної підтримки',
     'ВЛК ВМС': 'Військово-лікарська комісія Військово-Морських Сил',
@@ -102,123 +41,86 @@
     'НПА': 'Нормативно-правовий акт',
     'РХ': 'Розклад хвороб',
   };
-
-  // Сортуємо за довжиною спадаюче — щоб «ТЦК та СП» матчилось перед «ТЦК»
-  const terms = Object.keys(GLOSSARY).sort((a, b) => b.length - a.length);
-  const escaped = terms.map(t => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+  const terms = Object.keys(G).sort((a, b) => b.length - a.length);
+  const esc = terms.map(t => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
   let regex;
   try {
-    regex = new RegExp(
-      '(?<![\\p{L}\\p{N}])(' + escaped.join('|') + ')(?![\\p{L}\\p{N}])',
-      'gu'
-    );
+    regex = new RegExp('(?<![\\p{L}\\p{N}])(' + esc.join('|') + ')(?![\\p{L}\\p{N}])', 'gu');
   } catch (e) {
-    // Старі браузери без Unicode lookbehind — fallback без бордерів
-    regex = new RegExp('(' + escaped.join('|') + ')', 'g');
+    regex = new RegExp('(' + esc.join('|') + ')', 'g');
   }
-
-  const SKIP = new Set(['A', 'ABBR', 'CODE', 'PRE', 'SCRIPT', 'STYLE',
-                         'TEXTAREA', 'INPUT', 'BUTTON', 'NAV', 'HEADER',
-                         'FOOTER', 'AUDIO', 'VIDEO']);
-
-  function shouldSkip(node) {
+  const SKIP = new Set(['A','ABBR','CODE','PRE','SCRIPT','STYLE','TEXTAREA','INPUT','BUTTON','NAV','HEADER','FOOTER']);
+  function skip(node) {
     let p = node.parentElement;
     while (p && p !== document.body) {
       if (SKIP.has(p.tagName)) return true;
-      if (p.classList && (p.classList.contains('no-glossary') ||
-                          p.classList.contains('site-nav') ||
-                          p.classList.contains('breadcrumb-nav'))) return true;
+      if (p.classList?.contains('no-glossary') || p.classList?.contains('site-nav')) return true;
       p = p.parentElement;
     }
     return false;
   }
-
-  function processTextNode(node) {
-    if (shouldSkip(node)) return;
+  function processNode(node) {
+    if (skip(node)) return;
     const text = node.nodeValue;
     if (!text || text.length < 3) return;
     regex.lastIndex = 0;
     if (!regex.test(text)) return;
     regex.lastIndex = 0;
-
     const frag = document.createDocumentFragment();
-    let lastIdx = 0, match;
-    while ((match = regex.exec(text)) !== null) {
-      const term = match[1];
-      const matchStart = match.index;
-      if (matchStart > lastIdx) {
-        frag.appendChild(document.createTextNode(text.slice(lastIdx, matchStart)));
-      }
-      const abbr = document.createElement('abbr');
-      abbr.title = GLOSSARY[term];
-      abbr.textContent = term;
-      frag.appendChild(abbr);
-      lastIdx = matchStart + term.length;
+    let last = 0, m;
+    while ((m = regex.exec(text))) {
+      if (m.index > last) frag.appendChild(document.createTextNode(text.slice(last, m.index)));
+      const a = document.createElement('abbr');
+      a.title = G[m[1]];
+      a.textContent = m[1];
+      frag.appendChild(a);
+      last = m.index + m[1].length;
     }
-    if (lastIdx < text.length) {
-      frag.appendChild(document.createTextNode(text.slice(lastIdx)));
-    }
+    if (last < text.length) frag.appendChild(document.createTextNode(text.slice(last)));
     node.parentNode.replaceChild(frag, node);
   }
-
-  function applyGlossary() {
+  function run() {
     if (!document.body) return;
-    const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+    const w = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
     const nodes = [];
     let n;
-    while (n = walker.nextNode()) nodes.push(n);
-    nodes.forEach(processTextNode);
+    while ((n = w.nextNode())) nodes.push(n);
+    nodes.forEach(processNode);
   }
-
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', applyGlossary);
-  } else {
-    applyGlossary();
-  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', run);
+  else run();
 })();
 
-// === Amendment marker styling + freshness badges ===
+// ── Amendment marker freshness — додаємо data-year на blockquote з посиланнями zNNNN-YY ──
 (function() {
-  function applyFreshness() {
-    // 1. Знайти всі blockquote, що мають у текстовому вмісті посилання на наказ
-    //    у форматі zNNNN-YY (наш стандарт реєстрації Мін'юсту).
-    const yearRegex = /z\d{3,5}-(\d{2})/g;
+  function run() {
+    const yearRe = /z\d{3,5}-(\d{2})/g;
     document.querySelectorAll('blockquote').forEach(bq => {
-      const matches = [...bq.textContent.matchAll(yearRegex)];
-      if (matches.length === 0) return;
+      const matches = [...bq.textContent.matchAll(yearRe)];
+      if (!matches.length) return;
       bq.classList.add('amend-marker');
-      // Беремо найновіший рік серед посилань — він репрезентативний.
-      let maxYear = 0;
+      let maxY = 0;
       matches.forEach(m => {
         const yy = parseInt(m[1], 10);
         const full = yy >= 80 ? 1900 + yy : 2000 + yy;
-        if (full > maxYear) maxYear = full;
+        if (full > maxY) maxY = full;
       });
-      bq.dataset.year = maxYear;
+      bq.dataset.year = maxY;
 
-      // 2. Підсвітити батьківський punkt (h2/h3) свіжістю.
-      if (maxYear >= 2024) {
-        // знайти найближчий заголовок вище — h2 або h3
+      if (maxY >= 2024) {
         let prev = bq.previousElementSibling;
-        let head = null;
-        while (prev) {
-          if (prev.tagName && /^H[23]$/.test(prev.tagName)) { head = prev; break; }
-          prev = prev.previousElementSibling;
-        }
-        if (head && !head.querySelector('.freshness-badge')) {
+        while (prev && !/^H[23]$/.test(prev.tagName || '')) prev = prev.previousElementSibling;
+        if (prev && !prev.querySelector('.freshness-badge')) {
           const badge = document.createElement('span');
-          badge.className = 'freshness-badge y-' + maxYear;
-          badge.textContent = maxYear + ' ✦';
-          badge.title = 'Цей пункт змінено у ' + maxYear + ' році';
-          head.appendChild(badge);
+          badge.className = 'freshness-badge y-' + maxY;
+          badge.textContent = maxY + ' ✦';
+          badge.title = 'Пункт змінено у ' + maxY + ' році';
+          prev.appendChild(badge);
         }
       }
     });
   }
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', applyFreshness);
-  } else {
-    applyFreshness();
-  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', run);
+  else run();
 })();
 </script>

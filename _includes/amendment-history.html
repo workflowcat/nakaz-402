@@ -1,168 +1,42 @@
 {% comment %}
   Міні-таймлайн історії амендментів пункту/глави.
+  Стилі — у /assets/css/site.scss
   Очікує: page.amended_by — список об'єктів {date, order, op, scope}.
-  Опціонально: page.original_redaction — дата базової редакції.
 {% endcomment %}
 
 {% if page.amended_by and page.amended_by.size > 0 %}
-<style>
-  /* Локальні стилі для амендмент-таймлайну */
-  .amend-history {
-    border: 1px solid var(--border-color, #e0e0e0);
-    border-radius: 6px;
-    margin: 1rem 0 1.5rem;
-    background: var(--code-background-color, #fafafa);
-  }
-  .amend-history > summary {
-    cursor: pointer;
-    padding: 0.6rem 1rem;
-    font-weight: 500;
-    list-style: none;
-    display: flex;
-    align-items: center;
-    gap: 0.6rem;
-    user-select: none;
-  }
-  .amend-history > summary::before {
-    content: "▶";
-    font-size: 0.7rem;
-    transition: transform 0.15s;
-    opacity: 0.6;
-  }
-  .amend-history[open] > summary::before {
-    transform: rotate(90deg);
-  }
-  .amend-history .ah-badge {
-    margin-left: auto;
-    font-size: 0.78rem;
-    font-family: var(--mono-font-family, monospace);
-    color: var(--body-text-color);
-    opacity: 0.6;
-  }
-  .amend-history .ah-body {
-    padding: 0.25rem 1rem 1rem;
-    border-top: 1px solid var(--border-color, #e0e0e0);
-  }
-
-  /* Горизонтальний таймлайн */
-  .ah-track {
-    position: relative;
-    height: 38px;
-    margin: 0.8rem 0 1rem;
-    background: linear-gradient(90deg, #e0e0e0 0%, #c8c8c8 100%);
-    border-radius: 2px;
-  }
-  .ah-track .ah-dot {
-    position: absolute;
-    top: 50%;
-    transform: translate(-50%, -50%);
-    width: 14px;
-    height: 14px;
-    border-radius: 50%;
-    border: 2px solid white;
-    cursor: pointer;
-    transition: transform 0.1s;
-  }
-  .ah-track .ah-dot:hover {
-    transform: translate(-50%, -50%) scale(1.4);
-    z-index: 10;
-  }
-  .ah-track .ah-dot[data-op="insert"]    { background: #4caf50; }
-  .ah-track .ah-dot[data-op="redaction"] { background: #ff9800; }
-  .ah-track .ah-dot[data-op="edit"]      { background: #607d8b; }
-  .ah-track .ah-dot[data-op="repeal"]    { background: #f44336; }
-  .ah-track .ah-dot[data-op="restore"]   { background: #2196f3; }
-  .ah-track .ah-tick {
-    position: absolute;
-    top: 100%;
-    transform: translateX(-50%);
-    font-size: 0.65rem;
-    margin-top: 3px;
-    color: var(--body-text-color);
-    opacity: 0.55;
-    white-space: nowrap;
-  }
-
-  /* Список */
-  .ah-list {
-    list-style: none;
-    padding: 0;
-    margin: 0.5rem 0 0;
-    font-size: 0.85rem;
-  }
-  .ah-list li {
-    display: flex;
-    align-items: baseline;
-    gap: 0.5rem;
-    padding: 4px 0;
-    border-bottom: 1px solid var(--border-color, #f0f0f0);
-  }
-  .ah-list li:last-child { border-bottom: none; }
-  .ah-list .ah-date {
-    font-family: var(--mono-font-family, monospace);
-    font-size: 0.78rem;
-    color: var(--body-text-color);
-    opacity: 0.7;
-    min-width: 5.5rem;
-  }
-  .ah-list .ah-op {
-    font-size: 0.7rem;
-    padding: 1px 7px;
-    border-radius: 8px;
-    font-family: var(--mono-font-family, monospace);
-    min-width: 4.5rem;
-    text-align: center;
-  }
-  .ah-list .ah-op[data-op="insert"]    { background: #d8efd9; color: #2d6a31; }
-  .ah-list .ah-op[data-op="redaction"] { background: #fde6c8; color: #8a5a1a; }
-  .ah-list .ah-op[data-op="edit"]      { background: #e3e6f0; color: #555; }
-  .ah-list .ah-op[data-op="repeal"]    { background: #f6d4d4; color: #7a2222; }
-  .ah-list .ah-order {
-    font-family: var(--mono-font-family, monospace);
-    font-size: 0.78rem;
-  }
-  .ah-list .ah-scope {
-    opacity: 0.75;
-    flex: 1;
-  }
-</style>
-
 {% assign sorted = page.amended_by | sort: "date" %}
 {% assign first_date = sorted.first.date | date: "%s" %}
 {% assign last_date = sorted.last.date | date: "%s" %}
-{% if page.original_redaction %}
-  {% assign first_date = page.original_redaction | date: "%s" %}
-{% endif %}
+{% if page.original_redaction %}{% assign first_date = page.original_redaction | date: "%s" %}{% endif %}
 {% assign span = last_date | minus: first_date %}
 {% if span == 0 %}{% assign span = 1 %}{% endif %}
 
 <details class="amend-history">
   <summary>
     📜 Історія цього пункту
-    <span class="ah-badge">{{ page.amended_by.size }} амендмент{% if page.amended_by.size > 1 %}и{% endif %} · з {{ sorted.first.date | date: "%Y" }} по {{ sorted.last.date | date: "%Y" }}</span>
+    <span class="ah-badge">{{ page.amended_by.size }} амендмент{% if page.amended_by.size > 1 %}и{% endif %} · {{ sorted.first.date | date: "%Y" }}—{{ sorted.last.date | date: "%Y" }}</span>
   </summary>
   <div class="ah-body">
     <div class="ah-track" aria-hidden="true">
       {% for a in sorted %}
-        {% assign ts = a.date | date: "%s" %}
-        {% assign offset = ts | minus: first_date | times: 100 | divided_by: span %}
-        <span class="ah-dot"
-              style="left: {{ offset }}%;"
-              data-op="{{ a.op }}"
-              title="{{ a.date }} — наказ {{ a.order }} ({{ a.op }}){% if a.scope %}: {{ a.scope }}{% endif %}"></span>
+      {% assign ts = a.date | date: "%s" %}
+      {% assign off = ts | minus: first_date | times: 100 | divided_by: span %}
+      <span class="ah-dot" style="left: {{ off }}%;" data-op="{{ a.op }}"
+            title="{{ a.date }} — наказ {{ a.order }} ({{ a.op }}){% if a.scope %}: {{ a.scope }}{% endif %}"></span>
       {% endfor %}
       <span class="ah-tick" style="left: 0%;">{{ sorted.first.date | date: "%Y" }}</span>
       <span class="ah-tick" style="left: 100%;">{{ sorted.last.date | date: "%Y" }}</span>
     </div>
     <ul class="ah-list">
-      {% assign reverse_sorted = page.amended_by | sort: "date" | reverse %}
-      {% for a in reverse_sorted %}
-        <li>
-          <span class="ah-date">{{ a.date | date: "%d.%m.%Y" }}</span>
-          <span class="ah-op" data-op="{{ a.op }}">{{ a.op }}</span>
-          <span class="ah-order"><a href="https://zakon.rada.gov.ua/laws/show/{{ a.order }}" target="_blank" rel="noopener">{{ a.order }}</a></span>
-          {% if a.scope %}<span class="ah-scope">{{ a.scope }}</span>{% endif %}
-        </li>
+      {% assign rev = page.amended_by | sort: "date" | reverse %}
+      {% for a in rev %}
+      <li>
+        <span class="ah-date">{{ a.date | date: "%d.%m.%Y" }}</span>
+        <span class="ah-op" data-op="{{ a.op }}">{{ a.op }}</span>
+        <span class="ah-order"><a href="https://zakon.rada.gov.ua/laws/show/{{ a.order }}" target="_blank" rel="noopener">{{ a.order }}</a></span>
+        {% if a.scope %}<span class="ah-scope">{{ a.scope }}</span>{% endif %}
+      </li>
       {% endfor %}
     </ul>
   </div>

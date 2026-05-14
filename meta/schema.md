@@ -1,6 +1,6 @@
 ---
 title: Схема репо
-nav_order: 9
+nav_exclude: true
 ---
 
 # Схема репозиторію
