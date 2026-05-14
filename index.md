@@ -15,10 +15,11 @@ permalink: /
 медикам одночасно.
 {: .fs-6 .fw-300 }
 
-[Як це працює](docs/how-it-works.md){: .btn .btn-primary .fs-5 .mb-4 .mb-md-0 .mr-2 }
+[📊 Управління змінами](changes.md){: .btn .btn-primary .fs-5 .mb-4 .mb-md-0 .mr-2 }
+[Як це працює](docs/how-it-works.md){: .btn .fs-5 .mb-4 .mb-md-0 .mr-2 }
 [Архітектура](docs/architecture.md){: .btn .fs-5 .mb-4 .mb-md-0 .mr-2 }
 [Тур по амендменту](docs/walkthrough.md){: .btn .fs-5 .mb-4 .mb-md-0 .mr-2 }
-[Офіційний текст ↗](https://zakon.rada.gov.ua/laws/show/z1109-08){: .btn .fs-5 .mb-4 .mb-md-0 }
+[Офіційний ↗](https://zakon.rada.gov.ua/laws/show/z1109-08){: .btn .fs-5 .mb-4 .mb-md-0 }
 
 ---
 

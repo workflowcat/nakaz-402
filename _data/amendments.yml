@@ -1,0 +1,198 @@
+# meta/amendments.yaml
+#
+# Машино-читабельний журнал амендментів до Наказу МОУ № 402.
+# Кожен запис у `amendments` — окремий наказ-зміна.
+#
+# Поле `affects` (TODO) має містити список id пунктів/розділів/додатків
+# (за нашою системою з meta/schema.md), які цей наказ зачепив.
+# Наразі заповнено лише короткий опис у `summary` — точну розкладку по
+# зачеплених пунктах треба парсити з приміток `{Із змінами...}` у тексті.
+#
+# Джерело: блок «{Із змінами, внесеними згідно з ...}» у нижній частині
+# офіційної редакції на zakon.rada.gov.ua/laws/show/z1109-08
+
+base:
+  order: "402"
+  ministry: "Міноборони України"
+  signed_at: 2008-08-14
+  registered_at: 2008-08-26
+  registration: z1109-08
+  title: >-
+    Про затвердження Положення про військово-лікарську експертизу
+    в Збройних Силах України
+  source: https://zakon.rada.gov.ua/laws/show/z1109-08
+
+# Хронологічно. Останній запис — найсвіжіша редакція.
+amendments:
+
+  - order: "577"
+    signed_at: 2010-11-09
+    registration: z1180-10
+    summary: Технічні уточнення.
+    affects: []
+
+  - order: "466"
+    signed_at: 2011-08-01
+    registration: z1033-11
+    summary: Заміна додатків 15-25 на 16-26; редакційні зміни в пп. 1.2.
+    affects: []
+
+  - order: "363"
+    signed_at: 2012-05-29
+    registration: z1008-12
+    summary: Редакційні коректури.
+    affects: []
+
+  - order: "346"
+    signed_at: 2013-05-27
+    registration: z0942-13
+    summary: Технічні уточнення.
+    affects: []
+
+  - order: "508"
+    signed_at: 2014-08-06
+    registration: z1231-14
+    summary: Скасування пункту 2 самого наказу.
+    affects:
+      - id: nakaz.p2
+        op: repeal
+
+  - order: "524"
+    signed_at: 2014-08-12
+    registration: z1054-14
+    summary: >-
+      Заміна термінів: «аеромобільні» → «високомобільні десантні»,
+      «внутрішні війська» → «Національна гвардія».
+    affects: []
+
+  - order: "779"
+    signed_at: 2014-10-30
+    registration: z1434-14
+    summary: Уточнення.
+    affects: []
+
+  - order: "318"
+    signed_at: 2015-07-07
+    registration: z0895-15
+    summary: Редакційні поправки.
+    affects: []
+
+  - order: "519"
+    signed_at: 2015-09-30
+    registration: z1287-15
+    summary: Коректив.
+    affects: []
+
+  - order: "193"
+    signed_at: 2017-03-29
+    registration: z0537-17
+    summary: >-
+      Структурні зміни; заміна «Головний військово-медичний клінічний центр»
+      на «Національний військово-медичний клінічний центр».
+    affects: []
+
+  - order: "589"
+    signed_at: 2017-11-10
+    registration: z1467-17
+    summary: Редакційні поправки.
+    affects: []
+
+  - order: "602"
+    signed_at: 2017-11-20
+    registration: z1566-17
+    summary: Затвердження окремого Положення про лікарсько-льотну експертизу.
+    affects: []
+
+  - order: "489"
+    signed_at: 2018-10-01
+    registration: z1204-18
+    summary: Уточнення.
+    affects: []
+
+  - order: "70"
+    signed_at: 2021-03-18
+    registration: z0431-21
+    summary: Доповнення посилань на особливо небезпечні інфекційні хвороби.
+    affects: []
+
+  - order: "457"
+    signed_at: 2023-08-08
+    registration: z1468-23
+    summary: Заміна «високомобільні десантні» → «Десантно-штурмові».
+    affects: []
+
+  - order: "490"
+    signed_at: 2023-08-18
+    registration: z1467-23
+    summary: >-
+      Велика структурна реорганізація розділів, розширення положень про
+      види ВЛК; зачепило більшість пунктів Розділу I.
+    affects:
+      - id: polozhennia.r1.gl1.p1.1
+        op: edit
+      - id: polozhennia.r1.gl1.p1.3
+        op: edit
+
+  - order: "262"
+    signed_at: 2024-04-27
+    registration: z0616-24
+    summary: >-
+      Суттєві доповнення: новий порядок розгляду звернень, нові формулювання
+      пп. 1.1, 1.2, доповнення про допоміжні засоби реабілітації.
+    affects:
+      - id: polozhennia.r1.gl1.p1.1
+        op: redaction   # повна нова редакція пункту
+      - id: polozhennia.r1.gl1.p1.2
+        op: redaction
+      - id: polozhennia.r1.gl1.p1.3
+        op: insert      # доповнено абзацом про засоби реабілітації
+
+  - order: "686"
+    signed_at: 2024-10-14
+    registration: z1674-24
+    summary: Технічні уточнення; обов'язки голів ВЛК; правки пп. 1.2.
+    affects:
+      - id: polozhennia.r1.gl1.p1.2
+        op: edit
+
+  - order: "4"
+    signed_at: 2025-01-03
+    registration: z0027-25
+    summary: Доповнення щодо оцінювання повсякденного функціонування.
+    affects: []
+
+  - order: "153"
+    signed_at: 2025-02-27
+    registration: z0329-25
+    summary: >-
+      Доповнено главу 1 розділу I новим пунктом 1.4 (електронна
+      інформаційна взаємодія через «Трембіту»).
+    affects:
+      - id: polozhennia.r1.gl1.p1.4
+        op: insert
+
+  - order: "283"
+    signed_at: 2025-05-02
+    registration: z0691-25
+    summary: Редакційні коректури.
+    affects: []
+
+  - order: "518"
+    signed_at: 2025-08-01
+    registration: z1167-25
+    summary: >-
+      Розширення сфери застосування на Державну службу спеціального
+      зв'язку та захисту інформації України.
+    affects:
+      - id: polozhennia.r1.gl1.p1.1
+        op: edit
+      - id: polozhennia.r1.gl1.p1.2
+        op: edit
+      - id: polozhennia.r1.gl1.p1.3
+        op: edit
+
+  - order: "543"
+    signed_at: 2025-08-14
+    registration: z1207-25
+    summary: Технічні поправки (з урахуванням попередньої редакції).
+    affects: []

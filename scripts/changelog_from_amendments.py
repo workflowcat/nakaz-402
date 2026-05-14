@@ -27,6 +27,7 @@ except ImportError:
 REPO = Path(__file__).resolve().parent.parent
 AMENDMENTS_YAML = REPO / "meta" / "amendments.yaml"
 CHANGELOG_MD = REPO / "CHANGELOG.md"
+JEKYLL_DATA = REPO / "_data" / "amendments.yml"
 
 
 def generate(data: dict) -> str:
@@ -117,7 +118,11 @@ def main() -> int:
 
     if args.write:
         CHANGELOG_MD.write_text(generated, encoding="utf-8")
+        # Sync Jekyll's _data copy
+        JEKYLL_DATA.parent.mkdir(parents=True, exist_ok=True)
+        JEKYLL_DATA.write_text(AMENDMENTS_YAML.read_text(encoding="utf-8"), encoding="utf-8")
         print(f"Записано {CHANGELOG_MD}")
+        print(f"Sync'd {JEKYLL_DATA}")
         return 0
 
     if args.check:
