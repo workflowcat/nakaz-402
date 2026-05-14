@@ -11,6 +11,67 @@
 
 <link rel="stylesheet" href="{{ '/assets/css/site.css' | relative_url }}">
 
+{% if page.wide %}
+<style>
+  /* WIDE LAYOUT — для інструмент-сторінок (/, /changes/, /diff/) */
+  .side-bar { display: none !important; }
+  .main { margin-left: 0 !important; max-width: 100% !important; }
+  .main-content-wrap { max-width: 1400px !important; margin: 0 auto; padding-left: 2.25rem !important; padding-right: 2.25rem !important; }
+  .main-content { max-width: 100% !important; }
+  .main-header {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding-left: 2.25rem;
+    padding-right: 2.25rem;
+  }
+  /* Тонка верхня nav-стрічка для wide-сторінок */
+  .wide-topnav {
+    display: flex;
+    gap: 1.4rem;
+    align-items: center;
+    padding: 0.65rem 0;
+    margin: 0 0 1rem;
+    border-bottom: 1px solid var(--border);
+    font-size: 0.88rem;
+  }
+  .wide-topnav .wn-brand {
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    text-decoration: none;
+    color: var(--body-text-color);
+    margin-right: auto;
+  }
+  .wide-topnav .wn-brand-mark {
+    display: inline-block;
+    width: 22px;
+    height: 22px;
+    background: var(--accent);
+    border-radius: 5px;
+    color: white;
+    font-size: 0.62rem;
+    font-weight: 700;
+    text-align: center;
+    line-height: 22px;
+    letter-spacing: -0.5px;
+  }
+  .wide-topnav a:not(.wn-brand) {
+    color: var(--body-text-color);
+    opacity: 0.72;
+    text-decoration: none;
+    transition: opacity 0.12s;
+  }
+  .wide-topnav a:not(.wn-brand):hover { opacity: 1; color: var(--accent); }
+  .wide-topnav a.wn-active { opacity: 1; color: var(--accent); }
+  @media (max-width: 760px) {
+    .main-content-wrap { padding-left: 1rem !important; padding-right: 1rem !important; }
+    .wide-topnav { gap: 1rem; flex-wrap: wrap; font-size: 0.82rem; }
+  }
+</style>
+{% endif %}
+
 <script>
 // ── Glossary tooltips ──
 (function() {

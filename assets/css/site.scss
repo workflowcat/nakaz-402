@@ -306,6 +306,21 @@
   box-shadow: 0 2px 10px rgba(0,0,0,0.04);
   border-color: var(--accent-soft);
 }
+
+// На широких сторінках — картки можуть йти у 2 колонки в межах одного року
+// (year-block лишається повноширинним, а картки після нього групуються)
+@media (min-width: 1080px) {
+  // Грід для cards у /changes/ — створюємо невидимий контейнер,
+  // який групує картки року
+  #changes-list {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0 0.85rem;
+  }
+  #changes-list .year-block {
+    grid-column: 1 / -1;
+  }
+}
 .amendment-card[data-year="2025"] { border-left: 3px solid var(--fresh-2025); }
 .amendment-card[data-year="2024"] { border-left: 3px solid var(--fresh-2024); }
 .amendment-card[data-year^="20"]  { border-left: 3px solid var(--fresh-old); }
@@ -609,6 +624,12 @@ abbr[title]:hover {
   grid-template-columns: 1fr;
   gap: 0.5rem;
   margin: 1rem 0 1.5rem;
+}
+@media (min-width: 980px) {
+  .mini-feed {
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 0.65rem;
+  }
 }
 
 // ──────────────────────────────────────────────────────────────────

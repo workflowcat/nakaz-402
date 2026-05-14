@@ -1,9 +1,12 @@
 ---
 title: Зміни
 nav_order: 2
+wide: true
 description: "Усі амендменти до наказу 402 — таймлайн, фільтри, статистика"
 permalink: /changes/
 ---
+
+{% include wide-topnav.html %}
 
 # Управління змінами
 {: .no_toc }

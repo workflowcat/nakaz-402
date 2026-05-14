@@ -2,9 +2,12 @@
 title: Головна
 layout: default
 nav_order: 1
+wide: true
 description: "Наказ МОУ № 402 у git: машино-читабельний, з історією, з інструментами"
 permalink: /
 ---
+
+{% include wide-topnav.html %}
 
 <div class="hero">
 <p class="hero-eyebrow">Наказ МОУ № 402 · 14.08.2008</p>
