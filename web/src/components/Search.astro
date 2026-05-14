@@ -5,6 +5,8 @@ import { getCollection } from 'astro:content';
 const chapters = await getCollection('polozhennia');
 const nakaz = await getCollection('nakaz');
 const dodatky = await getCollection('dodatky');
+const rh = await getCollection('rh');
+const drafts = await getCollection('drafts');
 
 type Entry = { url: string; title: string; id: string; section: string; desc: string };
 const index: Entry[] = [];
@@ -35,6 +37,25 @@ for (const d of dodatky) {
     id: d.data.id || '',
     section: 'Додатки',
     desc: d.data.official_title || '',
+  });
+}
+for (const s of rh) {
+  const punktiList = s.data.punkty.map((p: any) => p.opys).join(' · ');
+  index.push({
+    url: `/rh/${String(s.data.stattia).padStart(3, '0')}/`,
+    title: `Стаття ${s.data.stattia}. ${s.data.nazva}`,
+    id: s.data.id || '',
+    section: 'Розклад хвороб',
+    desc: punktiList.slice(0, 200),
+  });
+}
+for (const d of drafts) {
+  index.push({
+    url: `/drafts/${d.id.replace(/\.md$/, '')}/`,
+    title: d.data.title,
+    id: d.data.id || '',
+    section: 'Драфти',
+    desc: d.data.short_summary || '',
   });
 }
 ---
