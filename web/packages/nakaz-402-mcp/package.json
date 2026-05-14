@@ -1,0 +1,38 @@
+{
+  "name": "nakaz-402-mcp",
+  "version": "0.1.0",
+  "description": "MCP (Model Context Protocol) server exposing the Naked МОУ № 402 API as tools for AI agents (Claude, ChatGPT, etc.).",
+  "type": "module",
+  "bin": {
+    "nakaz-402-mcp": "./src/server.mjs"
+  },
+  "main": "./src/server.mjs",
+  "files": [
+    "src",
+    "README.md"
+  ],
+  "scripts": {
+    "start": "node src/server.mjs"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "nakaz-402",
+    "claude",
+    "ukraine",
+    "law"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.0"
+  },
+  "author": "workflowcat",
+  "license": "CC0-1.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/workflowcat/nakaz-402"
+  },
+  "homepage": "https://nakaz-402.vercel.app/api/docs/"
+}

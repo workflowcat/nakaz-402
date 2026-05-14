@@ -9,6 +9,21 @@ import Layout from '../../layouts/Layout.astro';
     Корінь — <a class="text-accent-600 dark:text-accent-300 underline" href="/api/index.json">/api/index.json</a>.
   </p>
 
+  <div class="grid sm:grid-cols-2 gap-3 mb-6">
+    <a href="https://github.com/workflowcat/nakaz-402/tree/main/web/packages/nakaz-402"
+       target="_blank" rel="noopener"
+       class="block p-4 rounded-md border border-ink-200 dark:border-ink-800 hover:border-accent-500 hover:bg-ink-50 dark:hover:bg-ink-900">
+      <div class="font-mono text-sm text-accent-600 dark:text-accent-300">📦 npm: nakaz-402</div>
+      <div class="text-sm text-ink-500 mt-1">Typed fetch client, ~3 KB, zero deps. Works in browsers / Node / Deno / Bun / Workers.</div>
+    </a>
+    <a href="https://github.com/workflowcat/nakaz-402/tree/main/web/packages/nakaz-402-mcp"
+       target="_blank" rel="noopener"
+       class="block p-4 rounded-md border border-ink-200 dark:border-ink-800 hover:border-accent-500 hover:bg-ink-50 dark:hover:bg-ink-900">
+      <div class="font-mono text-sm text-accent-600 dark:text-accent-300">🤖 MCP: nakaz-402-mcp</div>
+      <div class="text-sm text-ink-500 mt-1">Model Context Protocol server. Plug into Claude / Cursor / Zed and ask questions about наказ in plain language.</div>
+    </a>
+  </div>
+
   <details class="my-4 p-4 rounded-md border border-ink-200 dark:border-ink-800 bg-ink-50 dark:bg-ink-900">
     <summary class="cursor-pointer font-medium">Приклади curl</summary>
     <div class="mt-3 space-y-2 text-sm font-mono">
