@@ -7,8 +7,8 @@ description: >-
   Машино-читабельна реплікація Наказу Міністерства оборони України № 402
   від 14.08.2008 про військово-лікарську експертизу.
 lang: uk
-url: ""        # ← після першого деплою заповнити https://<user>.github.io
-baseurl: ""    # ← якщо репо не на user.github.io, тут "/nakaz-402"
+url: "https://workflowcat.github.io"
+baseurl: "/nakaz-402"
 
 remote_theme: just-the-docs/just-the-docs
 
