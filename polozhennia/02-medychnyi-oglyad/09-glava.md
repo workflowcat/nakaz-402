@@ -8,6 +8,7 @@ status: active
 parent: "Розділ II. Медичний огляд"
 grand_parent: Положення
 nav_order: 9
+nav_exclude: true
 stub: true
 ---
 
