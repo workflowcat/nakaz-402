@@ -12,6 +12,14 @@ changelog:  ## Перегенерувати CHANGELOG.md з meta/amendments.yaml
 api:  ## Згенерувати статичний JSON API в api/
 	@python3 scripts/build_api.py
 
+draft:  ## Згенерувати проєкт наказу-зміни як .docx (use: make draft AMENDMENT=z0329-25)
+	@python3 scripts/draft_amendment.py --from-history $(AMENDMENT)
+
+draft-samples:  ## Перегенерувати всі зразки в examples/drafts/
+	@python3 scripts/draft_amendment.py --from-history z0329-25
+	@python3 scripts/draft_amendment.py --from-history z0616-24
+	@python3 scripts/draft_amendment.py --from-history z1231-14
+
 check:  ## Перевірити, що CHANGELOG синхронізовано з amendments.yaml (для CI)
 	@python3 scripts/changelog_from_amendments.py --check
 
