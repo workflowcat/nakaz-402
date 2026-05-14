@@ -1,14 +1,13 @@
 ---
 import Layout from '../../layouts/Layout.astro';
 import { getCollection } from 'astro:content';
-import { getCategories, getGrafy, categoryColor, categoryDescription } from '../../lib/rh';
+import { getCategories, getGrafy, categoryColor } from '../../lib/rh';
 
 const stattii = await getCollection('rh');
 const sorted = stattii.sort((a, b) => a.data.stattia - b.data.stattia);
 const grafy = getGrafy();
 const cats = getCategories();
 
-// Готуємо плоский JSON для клієнта: список статей з пунктами і графами.
 const data = sorted.map((s) => ({
   stattia: s.data.stattia,
   nazva: s.data.nazva,
@@ -25,67 +24,69 @@ const grafaAud = Object.fromEntries(grafy.map((g) => [g.code, g.audience]));
 ---
 <Layout
   title="Калькулятор придатності"
-  description="Інтерактивний калькулятор категорії придатності до військової служби за Розкладом хвороб."
+  description="Інтерактивний калькулятор категорії придатності до військової служби за Розкладом хвороб. Підтримує комбінацію кількох діагнозів."
 >
   <div class="mb-4 px-4 py-3 rounded-md bg-amber-50 dark:bg-amber-900/20 border-l-2 border-amber-500 text-sm text-amber-800 dark:text-amber-200 mt-6">
     <strong>Демо-калькулятор.</strong> Працює на ілюстративних даних 3 статей.
-    Результат не може замінити рішення ВЛК. Перед рішеннями — звіряйте з
-    <a href="https://zakon.rada.gov.ua/laws/show/z1109-08" target="_blank" rel="noopener" class="underline">офіційним текстом</a>.
+    Результат <em>не може замінити</em> рішення ВЛК — це навчально-довідковий
+    інструмент. Перед будь-якими рішеннями — звіряйте з <a href="https://zakon.rada.gov.ua/laws/show/z1109-08" target="_blank" rel="noopener" class="underline">офіційним текстом</a>
+    і кваліфікованим лікарем.
   </div>
 
   <h1 class="text-3xl font-bold tracking-tight mt-6 mb-2">Калькулятор придатності</h1>
   <p class="text-ink-500 mb-8 max-w-2xl">
-    Оберіть контингент і знайдіть статтю Розкладу хвороб + конкретний пункт —
-    отримаєте категорію придатності з поясненням.
+    Оберіть контингент і додайте усі чинні діагнози. Калькулятор покаже
+    категорію за кожним діагнозом окремо і <strong>підсумкову</strong> —
+    за принципом «найвища категорія обмеження за всіма ураженнями».
   </p>
 
-  <div class="grid lg:grid-cols-2 gap-6">
-    <section class="space-y-4">
-      <div>
-        <label for="contingent" class="block text-sm font-medium mb-2">1. Контингент</label>
-        <div class="grid grid-cols-1 gap-2">
-          {grafy.map((g, i) => (
-            <label class="flex items-baseline gap-3 p-3 rounded-md border border-ink-200 dark:border-ink-800 cursor-pointer hover:border-accent-500 has-[:checked]:border-accent-500 has-[:checked]:bg-accent-50 dark:has-[:checked]:bg-accent-900/20">
-              <input type="radio" name="contingent" value={g.code} class="mt-1 accent-accent-500" checked={i === 0} />
-              <div>
-                <div class="font-mono text-xs text-accent-600 dark:text-accent-300">{g.label}</div>
-                <div class="text-sm font-medium">{g.audience}</div>
-              </div>
-            </label>
-          ))}
-        </div>
-      </div>
-
-      <div>
-        <label for="stattia" class="block text-sm font-medium mb-2">2. Стаття (нозологія)</label>
-        <select id="stattia" class="w-full p-2 rounded-md border border-ink-200 dark:border-ink-700 bg-white dark:bg-ink-950 text-sm">
-          {sorted.map((s) => (
-            <option value={s.data.stattia}>Ст. {s.data.stattia}. {s.data.nazva}</option>
-          ))}
-        </select>
-      </div>
-
-      <div>
-        <label for="punkt" class="block text-sm font-medium mb-2">3. Пункт (ступінь тяжкості)</label>
-        <div id="punkt-options" class="space-y-2"></div>
+  <div class="grid lg:grid-cols-[1fr_2fr] gap-6">
+    <section>
+      <label class="block text-sm font-medium mb-2">Контингент</label>
+      <div class="space-y-2">
+        {grafy.map((g, i) => (
+          <label class="flex items-baseline gap-3 p-3 rounded-md border border-ink-200 dark:border-ink-800 cursor-pointer hover:border-accent-500 has-[:checked]:border-accent-500 has-[:checked]:bg-accent-50 dark:has-[:checked]:bg-accent-900/20">
+            <input type="radio" name="contingent" value={g.code} class="mt-1 accent-accent-500" checked={i === 0} />
+            <div>
+              <div class="font-mono text-xs text-accent-600 dark:text-accent-300">{g.label}</div>
+              <div class="text-sm font-medium">{g.audience}</div>
+            </div>
+          </label>
+        ))}
       </div>
     </section>
 
     <section>
-      <div class="text-sm font-medium mb-2">Результат</div>
-      <div id="result" class="rounded-md border border-ink-200 dark:border-ink-800 p-6 text-center">
-        <div class="text-ink-500 text-sm">Оберіть пункт ↑</div>
+      <div class="flex items-baseline justify-between mb-2">
+        <label class="text-sm font-medium">Діагнози</label>
+        <button id="add-diagnosis" type="button" class="text-sm px-3 py-1 rounded-md bg-accent-500 text-white hover:bg-accent-600">
+          + Додати
+        </button>
       </div>
+
+      <div id="diagnoses" class="space-y-3"></div>
+
+      <div id="empty-state" class="rounded-md border border-dashed border-ink-300 dark:border-ink-700 p-6 text-center text-ink-500 text-sm">
+        Натисніть «+ Додати» щоб обрати перший діагноз
+      </div>
+
+      <div class="mt-6">
+        <div class="text-sm font-medium mb-2">Підсумкова категорія</div>
+        <div id="summary" class="rounded-md border border-ink-200 dark:border-ink-800 p-6">
+          <div class="text-ink-500 text-sm text-center">Додайте принаймні один діагноз ↑</div>
+        </div>
+      </div>
+
       <details class="mt-4 text-sm">
-        <summary class="cursor-pointer text-ink-500 hover:text-ink-700 dark:hover:text-ink-300">Що означають категорії?</summary>
-        <ul class="mt-2 space-y-1">
-          {cats.map((c) => (
-            <li class="flex items-baseline gap-2">
-              <span class:list={['inline-block px-1.5 py-0.5 rounded font-mono text-[10px] font-semibold min-w-[2.5rem] text-center', categoryColor(c.code)]}>{c.code}</span>
-              <span class="text-xs text-ink-500">{c.description}</span>
-            </li>
-          ))}
-        </ul>
+        <summary class="cursor-pointer text-ink-500 hover:text-ink-700 dark:hover:text-ink-300">Як комбінуються категорії?</summary>
+        <div class="mt-2 text-xs text-ink-500 leading-relaxed">
+          За загальним принципом ВЛК — береться <strong>найвища</strong>
+          (найбільш обмежувальна) категорія за всіма ураженнями. Порядок
+          від легкої до тяжкої: А → А-1 → Б-1 → Б-2 → Б-3 → Б-4 → Б → В → Г → Д.
+          Окремі статті можуть мати спеціальні правила сумації — їх
+          калькулятор не враховує. Перед поданням до ВЛК — звіряйтеся з
+          лікарем-методистом.
+        </div>
       </details>
     </section>
   </div>
@@ -93,40 +94,19 @@ const grafaAud = Object.fromEntries(grafy.map((g) => [g.code, g.audience]));
   <script is:inline define:vars={{ data, catMap, grafaAud }}>
     (function () {
       const $ = (s) => document.querySelector(s);
-      const $$ = (s) => document.querySelectorAll(s);
-      const stattiaSel = $('#stattia');
-      const punktBox = $('#punkt-options');
-      const resultBox = $('#result');
+      const diagnosesBox = $('#diagnoses');
+      const emptyState = $('#empty-state');
+      const summaryBox = $('#summary');
+      const addBtn = $('#add-diagnosis');
 
-      function currentContingent() {
-        const r = document.querySelector('input[name="contingent"]:checked');
-        return r ? r.value : 'I';
-      }
-
-      function currentStattia() {
-        const v = parseInt(stattiaSel.value, 10);
-        return data.find((s) => s.stattia === v) || data[0];
-      }
-
-      function renderPunkty() {
-        const s = currentStattia();
-        punktBox.innerHTML = s.punkty.map((p, i) => {
-          const inputId = `pkt-${p.id}`;
-          return `
-            <label for="${inputId}" class="flex items-baseline gap-3 p-3 rounded-md border border-ink-200 dark:border-ink-800 cursor-pointer hover:border-accent-500 has-[:checked]:border-accent-500 has-[:checked]:bg-accent-50 dark:has-[:checked]:bg-accent-900/20">
-              <input id="${inputId}" type="radio" name="punkt" value="${p.id}" class="mt-1 accent-accent-500" ${i === 0 ? 'checked' : ''}/>
-              <div>
-                <div class="font-mono text-xs text-accent-600 dark:text-accent-300">пункт ${p.id})</div>
-                <div class="text-sm">${p.opys}</div>
-              </div>
-            </label>
-          `;
-        }).join('');
-        punktBox.querySelectorAll('input[name="punkt"]').forEach((el) => {
-          el.addEventListener('change', renderResult);
-        });
-        renderResult();
-      }
+      // Порядок тяжкості — менше = легше.
+      const SEVERITY = {
+        'А': 0, 'А-1': 1,
+        'Б-1': 2, 'Б-2': 3, 'Б-3': 4, 'Б-4': 5, 'Б': 6,
+        'В': 7,
+        'Г': 8,
+        'Д': 9,
+      };
 
       const CAT_COLOR = {
         'А':   'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300',
@@ -141,33 +121,126 @@ const grafaAud = Object.fromEntries(grafy.map((g) => [g.code, g.audience]));
         'Д':   'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300',
       };
 
-      function renderResult() {
-        const s = currentStattia();
+      let nextRowId = 0;
+      const rows = []; // {id, stattiaSel, punktSel}
+
+      function currentContingent() {
+        const r = document.querySelector('input[name="contingent"]:checked');
+        return r ? r.value : 'I';
+      }
+
+      function rowResult(row) {
+        const s = data.find((x) => x.stattia === parseInt(row.stattiaSel.value, 10));
+        if (!s) return null;
+        const p = s.punkty.find((x) => x.id === row.punktSel.value);
+        if (!p) return null;
         const g = currentContingent();
-        const selPunkt = document.querySelector('input[name="punkt"]:checked');
-        if (!selPunkt) {
-          resultBox.innerHTML = '<div class="text-ink-500 text-sm">Оберіть пункт ↑</div>';
+        const cat = p.grafy[g] || '—';
+        return { stattia: s, punkt: p, cat };
+      }
+
+      function renderSummary() {
+        if (rows.length === 0) {
+          summaryBox.innerHTML = '<div class="text-ink-500 text-sm text-center">Додайте принаймні один діагноз ↑</div>';
           return;
         }
-        const p = s.punkty.find((x) => x.id === selPunkt.value);
-        const cat = p.grafy[g] || '—';
-        const desc = catMap[cat] || 'Категорія не визначена для цього контингенту';
-        const aud = grafaAud[g];
-        const color = CAT_COLOR[cat] || 'bg-ink-100 text-ink-700 dark:bg-ink-800 dark:text-ink-300';
-        resultBox.innerHTML = `
-          <div class="text-xs text-ink-500 uppercase tracking-wider font-medium mb-1">Категорія</div>
-          <div class="inline-block px-6 py-3 rounded-md font-mono text-4xl font-bold ${color}">${cat}</div>
-          <div class="mt-3 text-base font-medium">${desc}</div>
-          <div class="mt-4 text-xs text-ink-500 leading-relaxed text-left max-w-md mx-auto">
-            <strong>Контекст:</strong> Граф ${g} (${aud}). Стаття ${s.stattia} «${s.short_nazva}», пункт ${p.id}) — ${p.opys}
+        const results = rows.map(rowResult).filter(Boolean);
+        if (!results.length) return;
+        // worst-wins
+        const worst = results.reduce((a, b) => (SEVERITY[a.cat] ?? -1) >= (SEVERITY[b.cat] ?? -1) ? a : b);
+        const color = CAT_COLOR[worst.cat] || 'bg-ink-100 text-ink-700 dark:bg-ink-800 dark:text-ink-300';
+        const desc = catMap[worst.cat] || '';
+        const aud = grafaAud[currentContingent()];
+        summaryBox.innerHTML = `
+          <div class="text-center">
+            <div class="text-xs text-ink-500 uppercase tracking-wider font-medium mb-1">Підсумок</div>
+            <div class="inline-block px-6 py-3 rounded-md font-mono text-4xl font-bold ${color}">${worst.cat}</div>
+            <div class="mt-3 text-base font-medium">${desc}</div>
+            <div class="mt-2 text-xs text-ink-500">${aud}</div>
+            <div class="mt-3 text-xs text-ink-500">
+              Визначається статтею ${worst.stattia.stattia} (${worst.stattia.short_nazva}), пункт ${worst.punkt.id})
+            </div>
           </div>
-          <a href="/rh/${String(s.stattia).padStart(3, '0')}/" class="inline-block mt-4 text-xs text-accent-600 dark:text-accent-300 hover:underline">Повна таблиця статті ↗</a>
         `;
       }
 
-      stattiaSel.addEventListener('change', renderPunkty);
-      document.querySelectorAll('input[name="contingent"]').forEach((el) => el.addEventListener('change', renderResult));
-      renderPunkty();
+      function renderPunkty(row) {
+        const stattia = data.find((x) => x.stattia === parseInt(row.stattiaSel.value, 10));
+        row.punktSel.innerHTML = stattia.punkty.map((p) =>
+          `<option value="${p.id}">пункт ${p.id}) — ${p.opys.slice(0, 60).replace(/[\n\r]+/g, ' ')}${p.opys.length > 60 ? '…' : ''}</option>`
+        ).join('');
+      }
+
+      function addRow() {
+        const id = ++nextRowId;
+        const row = document.createElement('div');
+        row.className = 'rounded-md border border-ink-200 dark:border-ink-800 p-3 grid sm:grid-cols-[1fr_1fr_auto] gap-2 items-end';
+        row.innerHTML = `
+          <div>
+            <label class="block text-[10px] uppercase tracking-wider text-ink-500 font-medium mb-1">Стаття</label>
+            <select data-role="stattia" class="w-full p-2 rounded-md border border-ink-200 dark:border-ink-700 bg-white dark:bg-ink-950 text-sm">
+              ${data.map((s) => `<option value="${s.stattia}">Ст. ${s.stattia}. ${s.short_nazva}</option>`).join('')}
+            </select>
+          </div>
+          <div>
+            <label class="block text-[10px] uppercase tracking-wider text-ink-500 font-medium mb-1">Пункт</label>
+            <select data-role="punkt" class="w-full p-2 rounded-md border border-ink-200 dark:border-ink-700 bg-white dark:bg-ink-950 text-sm"></select>
+          </div>
+          <button type="button" data-role="remove" class="p-2 rounded-md text-ink-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20" title="Видалити">✕</button>
+          <div data-role="rowresult" class="sm:col-span-3 text-xs text-ink-500 flex items-baseline gap-2"></div>
+        `;
+        diagnosesBox.appendChild(row);
+        const stattiaSel = row.querySelector('[data-role="stattia"]');
+        const punktSel = row.querySelector('[data-role="punkt"]');
+        const removeBtn = row.querySelector('[data-role="remove"]');
+        const rowResultEl = row.querySelector('[data-role="rowresult"]');
+        const entry = { id, stattiaSel, punktSel, el: row, resultEl: rowResultEl };
+
+        function refreshRowResult() {
+          const r = rowResult(entry);
+          if (!r) { rowResultEl.innerHTML = ''; return; }
+          const color = CAT_COLOR[r.cat] || 'bg-ink-100 text-ink-700 dark:bg-ink-800 dark:text-ink-300';
+          rowResultEl.innerHTML = `
+            <span class="px-1.5 py-0.5 rounded font-mono text-[10px] font-semibold ${color}">${r.cat}</span>
+            <span>${catMap[r.cat] || ''}</span>
+          `;
+        }
+
+        stattiaSel.addEventListener('change', () => { renderPunkty(entry); refreshRowResult(); renderSummary(); });
+        punktSel.addEventListener('change', () => { refreshRowResult(); renderSummary(); });
+        removeBtn.addEventListener('click', () => {
+          row.remove();
+          const idx = rows.indexOf(entry);
+          if (idx >= 0) rows.splice(idx, 1);
+          if (rows.length === 0) emptyState.style.display = '';
+          renderSummary();
+        });
+
+        renderPunkty(entry);
+        rows.push(entry);
+        emptyState.style.display = 'none';
+        refreshRowResult();
+        renderSummary();
+      }
+
+      addBtn.addEventListener('click', addRow);
+      document.querySelectorAll('input[name="contingent"]').forEach((el) => {
+        el.addEventListener('change', () => {
+          rows.forEach((r) => {
+            const rr = rowResult(r);
+            if (!rr) return;
+            const color = CAT_COLOR[rr.cat] || 'bg-ink-100 text-ink-700 dark:bg-ink-800 dark:text-ink-300';
+            r.resultEl.innerHTML = `
+              <span class="px-1.5 py-0.5 rounded font-mono text-[10px] font-semibold ${color}">${rr.cat}</span>
+              <span>${catMap[rr.cat] || ''}</span>
+            `;
+          });
+          renderSummary();
+        });
+      });
+
+      // Стартова — один рядок вже доданий, щоб користувач не натискав «+ Додати» з нуля.
+      addRow();
     })();
   </script>
 </Layout>
