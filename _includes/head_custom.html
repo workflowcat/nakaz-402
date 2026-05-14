@@ -1,8 +1,9 @@
 {% comment %}
   Глобальні style-кастомізації:
-  1. Кольорове кодування блок-цитат з маркерами амендментів за роком наказу.
-  2. Стилі для відкритих/підсвічених посилань на rada.gov.ua.
-  3. Favicon.
+  1. Favicon і theme color.
+  2. Кольорове кодування блок-цитат з маркерами амендментів за роком наказу.
+  3. Бейдж свіжості біля заголовків нещодавно змінених пунктів.
+  4. Glossary tooltips — авто-розпізнавання абревіатур.
 {% endcomment %}
 
 <link rel="icon" type="image/svg+xml" href="{{ '/favicon.svg' | relative_url }}">
@@ -55,9 +56,128 @@
   }
   .freshness-badge.y-2025 { background: #fde6c8; color: #8a5a1a; }
   .freshness-badge.y-2024 { background: #f0e8d4; color: #6a5018; }
+
+  /* Glossary tooltips — підкреслюємо абревіатури точечним підкресленням */
+  abbr[title] {
+    text-decoration: underline dotted;
+    text-decoration-color: #b9a8e8;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 3px;
+    cursor: help;
+    border: none;
+  }
+  abbr[title]:hover {
+    text-decoration-color: #7253ed;
+    background: rgba(114, 83, 237, 0.06);
+  }
 </style>
 
 <script>
+// === Glossary tooltips ===
+(function() {
+  const GLOSSARY = {
+    'ЦВЛК': 'Центральна військово-лікарська комісія',
+    'ТЦК та СП': 'Територіальний центр комплектування та соціальної підтримки',
+    'ВЛК ВМС': 'Військово-лікарська комісія Військово-Морських Сил',
+    'НВМКЦ': 'Національний військово-медичний клінічний центр',
+    'ВМКЦ': 'Військово-медичний клінічний центр',
+    'ВВНЗ': 'Вищі військові навчальні заклади',
+    'ВЛК': 'Військово-лікарська комісія',
+    'ВЛЕ': 'Військово-лікарська експертиза',
+    'ЛЛК': 'Лікарсько-льотна комісія',
+    'ЛЛЕ': 'Лікарсько-льотна експертиза',
+    'ТДВ': 'Таблиці додаткових вимог до стану здоровʼя',
+    'ТЦК': 'Територіальний центр комплектування',
+    'МОУ': 'Міністерство оборони України',
+    'МОЗ': 'Міністерство охорони здоровʼя України',
+    'ДССТ': 'Державна спеціальна служба транспорту',
+    'НГУ': 'Національна гвардія України',
+    'ДПСУ': 'Державна прикордонна служба України',
+    'ССО': 'Сили спеціальних операцій',
+    'ДШВ': 'Десантно-штурмові війська',
+    'ЗСУ': 'Збройні Сили України',
+    'ПТК': 'Приймально-технічна комісія',
+    'УПР': 'Управління повітряним рухом',
+    'БпАК': 'Безпілотні авіаційні комплекси',
+    'НПА': 'Нормативно-правовий акт',
+    'РХ': 'Розклад хвороб',
+  };
+
+  // Сортуємо за довжиною спадаюче — щоб «ТЦК та СП» матчилось перед «ТЦК»
+  const terms = Object.keys(GLOSSARY).sort((a, b) => b.length - a.length);
+  const escaped = terms.map(t => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+  let regex;
+  try {
+    regex = new RegExp(
+      '(?<![\\p{L}\\p{N}])(' + escaped.join('|') + ')(?![\\p{L}\\p{N}])',
+      'gu'
+    );
+  } catch (e) {
+    // Старі браузери без Unicode lookbehind — fallback без бордерів
+    regex = new RegExp('(' + escaped.join('|') + ')', 'g');
+  }
+
+  const SKIP = new Set(['A', 'ABBR', 'CODE', 'PRE', 'SCRIPT', 'STYLE',
+                         'TEXTAREA', 'INPUT', 'BUTTON', 'NAV', 'HEADER',
+                         'FOOTER', 'AUDIO', 'VIDEO']);
+
+  function shouldSkip(node) {
+    let p = node.parentElement;
+    while (p && p !== document.body) {
+      if (SKIP.has(p.tagName)) return true;
+      if (p.classList && (p.classList.contains('no-glossary') ||
+                          p.classList.contains('site-nav') ||
+                          p.classList.contains('breadcrumb-nav'))) return true;
+      p = p.parentElement;
+    }
+    return false;
+  }
+
+  function processTextNode(node) {
+    if (shouldSkip(node)) return;
+    const text = node.nodeValue;
+    if (!text || text.length < 3) return;
+    regex.lastIndex = 0;
+    if (!regex.test(text)) return;
+    regex.lastIndex = 0;
+
+    const frag = document.createDocumentFragment();
+    let lastIdx = 0, match;
+    while ((match = regex.exec(text)) !== null) {
+      const term = match[1];
+      const matchStart = match.index;
+      if (matchStart > lastIdx) {
+        frag.appendChild(document.createTextNode(text.slice(lastIdx, matchStart)));
+      }
+      const abbr = document.createElement('abbr');
+      abbr.title = GLOSSARY[term];
+      abbr.textContent = term;
+      frag.appendChild(abbr);
+      lastIdx = matchStart + term.length;
+    }
+    if (lastIdx < text.length) {
+      frag.appendChild(document.createTextNode(text.slice(lastIdx)));
+    }
+    node.parentNode.replaceChild(frag, node);
+  }
+
+  function applyGlossary() {
+    if (!document.body) return;
+    const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+    const nodes = [];
+    let n;
+    while (n = walker.nextNode()) nodes.push(n);
+    nodes.forEach(processTextNode);
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', applyGlossary);
+  } else {
+    applyGlossary();
+  }
+})();
+
+// === Amendment marker styling + freshness badges ===
 (function() {
   function applyFreshness() {
     // 1. Знайти всі blockquote, що мають у текстовому вмісті посилання на наказ
