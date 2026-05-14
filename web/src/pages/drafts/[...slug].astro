@@ -1,7 +1,7 @@
 ---
 import Layout from '../../layouts/Layout.astro';
 import { getCollection, render } from 'astro:content';
-import { resolveTarget, wordDiff, diffBefore, diffAfter, buildPunktIdIndex, lintDraft } from '../../lib/drafts';
+import { resolveTarget, wordDiff, diffBefore, diffAfter, buildPunktIdIndex, lintDraft, lintTerminology } from '../../lib/drafts';
 
 export async function getStaticPaths() {
   const drafts = await getCollection('drafts');
@@ -30,7 +30,10 @@ const resolvedOps = await Promise.all(
 const allDrafts = await getCollection('drafts');
 const otherDrafts = allDrafts.filter((d) => d.id !== entry.id);
 const knownIds = await buildPunktIdIndex();
-const findings = lintDraft(entry as any, knownIds, otherDrafts as any);
+const findings = [
+  ...lintDraft(entry as any, knownIds, otherDrafts as any),
+  ...lintTerminology(entry as any),
+];
 const errorCount = findings.filter((f) => f.level === 'error').length;
 const warningCount = findings.filter((f) => f.level === 'warning').length;
 

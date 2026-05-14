@@ -32,6 +32,7 @@ const copies = [
   ['nakaz.md', 'nakaz/nakaz.md'],
   ['meta/amendments.yaml', '_data/amendments.yaml'],
   ['meta/glossary.md', '_data/glossary.md'],
+  ['meta/terminology.yaml', '_data/terminology.yaml'],
 ];
 
 for (const [src, dst] of copies) {

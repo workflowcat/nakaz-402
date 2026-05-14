@@ -64,6 +64,9 @@ export function tokenize(s: string): string[] {
 }
 
 import { diffWordsWithSpace } from 'diff';
+// @ts-expect-error - Vite raw import for YAML; resolved at build time.
+import terminologyYamlRaw from '../content/_data/terminology.yaml?raw';
+import { parse as parseYaml } from 'yaml';
 
 export interface DiffPart {
   /** 'eq' | 'add' | 'del' — equal, added (only in `after`), removed (only in `before`). */
@@ -235,6 +238,61 @@ export function lintDraft(
         code: 'redaction-without-text',
         message: `Операція #${i + 1}: \`redaction\` без \`new_text\` — нічого пропонувати замість.`,
       });
+    }
+  });
+
+  return findings;
+}
+
+// ---- Terminology drift ----
+
+export interface DeprecatedTerm {
+  term: string;
+  replace_with: string;
+  since_order?: string | null;
+  since_date?: string | Date | null;
+  note?: string;
+}
+
+let _termCache: DeprecatedTerm[] | null = null;
+
+export function loadDeprecatedTerms(): DeprecatedTerm[] {
+  if (_termCache) return _termCache;
+  const data = parseYaml(terminologyYamlRaw as string) as { deprecated_terms?: DeprecatedTerm[] };
+  _termCache = data.deprecated_terms ?? [];
+  return _termCache;
+}
+
+/**
+ * Scan a draft's operation payload text for deprecated terminology.
+ * Whole-word match (Cyrillic-aware) so that "аеромобільні" doesn't fire
+ * inside "неаеромобільніший" etc.
+ */
+export function lintTerminology(draft: {
+  data: { operations?: DraftOp[] };
+}): LintFinding[] {
+  const findings: LintFinding[] = [];
+  const terms = loadDeprecatedTerms();
+  const ops = draft.data.operations ?? [];
+
+  ops.forEach((op, i) => {
+    const payload = op.new_text ?? op.text ?? '';
+    if (!payload) return;
+    for (const t of terms) {
+      // Escape regex metas, wrap with Unicode word boundaries.
+      const esc = t.term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const re = new RegExp(`(?<![\\p{L}\\p{N}])${esc}(?![\\p{L}\\p{N}])`, 'iu');
+      if (re.test(payload)) {
+        const sourceNote = t.since_order
+          ? `замінено наказом № ${t.since_order}${t.since_date ? ` від ${typeof t.since_date === 'string' ? t.since_date : (t.since_date as Date).toISOString().slice(0, 10)}` : ''}`
+          : 'застаріла формулювання';
+        findings.push({
+          level: 'warning',
+          op_index: i,
+          code: 'terminology-drift',
+          message: `Операція #${i + 1}: вживає застарілий термін «${t.term}» → канонічно зараз «${t.replace_with}» (${sourceNote}).`,
+        });
+      }
     }
   });
 
