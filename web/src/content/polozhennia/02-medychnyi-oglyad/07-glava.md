@@ -13,8 +13,6 @@ nav_order: 7
 
 # Глава 7. Медичний огляд членів сімей військовослужбовців
 
-{% include chapter-context.html %}
-{% include amendment-history.html %}
 
 <a id="p7.1"></a>
 ## 7.1.

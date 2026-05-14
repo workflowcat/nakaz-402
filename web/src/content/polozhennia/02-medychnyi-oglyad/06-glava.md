@@ -13,8 +13,6 @@ nav_order: 6
 
 # Глава 6. Медичний огляд військовослужбовців
 
-{% include chapter-context.html %}
-{% include amendment-history.html %}
 
 <a id="p6.1"></a>
 ## 6.1.

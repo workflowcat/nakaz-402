@@ -13,8 +13,6 @@ nav_order: 20
 
 # Глава 20. Постанови ВЛК
 
-{% include chapter-context.html %}
-{% include amendment-history.html %}
 
 <a id="p20.1"></a>
 ## 20.1.

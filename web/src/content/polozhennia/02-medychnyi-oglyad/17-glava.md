@@ -13,8 +13,6 @@ nav_order: 17
 
 # Глава 17. Медичний огляд військовослужбовців, членів їх сімей, які
 
-{% include chapter-context.html %}
-{% include amendment-history.html %}
 
 виїжджають за кордон
 

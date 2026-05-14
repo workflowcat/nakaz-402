@@ -13,8 +13,6 @@ nav_order: 13
 
 # Глава 13. Медичний огляд водолазів
 
-{% include chapter-context.html %}
-{% include amendment-history.html %}
 
 <a id="p13.1"></a>
 ## 13.1.

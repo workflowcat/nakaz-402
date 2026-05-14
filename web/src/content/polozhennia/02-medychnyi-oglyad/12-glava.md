@@ -13,8 +13,6 @@ nav_order: 12
 
 # Глава 12. Медичний огляд курсантів учбових частин з підготовки водолазів
 
-{% include chapter-context.html %}
-{% include amendment-history.html %}
 
 <a id="p12.1"></a>
 ## 12.1.

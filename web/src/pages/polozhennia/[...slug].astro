@@ -1,5 +1,6 @@
 ---
 import Layout from '../../layouts/Layout.astro';
+import AmendmentHistory from '../../components/AmendmentHistory.astro';
 import { getCollection, render } from 'astro:content';
 
 export async function getStaticPaths() {
@@ -32,6 +33,13 @@ const githubEditUrl = `https://github.com/workflowcat/nakaz-402/edit/main/polozh
       <strong>Заглушка:</strong> ця глава ще не наповнена повним текстом.
       Авторитетне джерело — <a href={entry.data.source} class="underline" target="_blank" rel="noopener">rada.gov.ua</a>.
     </div>
+  )}
+
+  {entry.data.amended_by && entry.data.amended_by.length > 0 && (
+    <AmendmentHistory
+      amendedBy={entry.data.amended_by}
+      originalRedaction={entry.data.original_redaction}
+    />
   )}
 
   <article class="prose-doc">

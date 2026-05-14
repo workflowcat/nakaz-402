@@ -13,8 +13,6 @@ nav_order: 22
 
 # Глава 22. Оформлення постанов ВЛК
 
-{% include chapter-context.html %}
-{% include amendment-history.html %}
 
 <a id="p22.1"></a>
 ## 22.1.

@@ -13,8 +13,6 @@ nav_order: 1
 
 # Глава 1. Загальні положення
 
-{% include chapter-context.html %}
-{% include amendment-history.html %}
 
 <a id="p1.1"></a>
 ## 1.1.

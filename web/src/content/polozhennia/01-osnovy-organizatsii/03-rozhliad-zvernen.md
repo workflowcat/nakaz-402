@@ -13,8 +13,6 @@ nav_order: 3
 
 # Глава 3. Порядок подання та розгляду звернень штатними ВЛК
 
-{% include chapter-context.html %}
-{% include amendment-history.html %}
 
 <a id="p3.1"></a>
 ## 3.1.

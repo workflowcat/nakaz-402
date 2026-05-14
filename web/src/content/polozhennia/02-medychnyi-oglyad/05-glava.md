@@ -13,8 +13,6 @@ nav_order: 5
 
 # Глава 5. Медичний огляд резервістів
 
-{% include chapter-context.html %}
-{% include amendment-history.html %}
 
 <a id="p5.1"></a>
 ## 5.1.

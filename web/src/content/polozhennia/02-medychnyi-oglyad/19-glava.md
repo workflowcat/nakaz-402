@@ -13,8 +13,6 @@ nav_order: 19
 
 # Глава 19. Медичний огляд військовослужбовців, які залучаються до участі у
 
-{% include chapter-context.html %}
-{% include amendment-history.html %}
 
 МО та до роботи у складі національного персоналу
 

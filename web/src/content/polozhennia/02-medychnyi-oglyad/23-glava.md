@@ -13,8 +13,6 @@ nav_order: 23
 
 # Глава 23. Медичний огляд громадян, які призиваються на військову службу
 
-{% include chapter-context.html %}
-{% include amendment-history.html %}
 
 за призовом осіб офіцерського складу
 

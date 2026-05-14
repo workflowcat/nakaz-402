@@ -13,8 +13,6 @@ nav_order: 15
 
 # Глава 15. Медичний огляд військовослужбовців Десантно-штурмових військ
 
-{% include chapter-context.html %}
-{% include amendment-history.html %}
 
 <a id="p15.1"></a>
 ## 15.1.

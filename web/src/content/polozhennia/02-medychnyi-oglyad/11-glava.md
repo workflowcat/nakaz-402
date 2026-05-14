@@ -13,8 +13,6 @@ nav_order: 11
 
 # Глава 11. Відбір кандидатів для навчання водолазній спеціальності
 
-{% include chapter-context.html %}
-{% include amendment-history.html %}
 
 <a id="p11.1"></a>
 ## 11.1.

@@ -13,8 +13,6 @@ nav_order: 2
 
 # Глава 2. Медичний огляд призовників і допризовників
 
-{% include chapter-context.html %}
-{% include amendment-history.html %}
 
 <a id="p2.1"></a>
 ## 2.1.

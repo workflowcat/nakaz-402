@@ -13,8 +13,6 @@ nav_order: 3
 
 # Глава 3. Медичний огляд військовозобов'язаних у мирний час та під час
 
-{% include chapter-context.html %}
-{% include amendment-history.html %}
 
 мобілізації, на особливий період
 

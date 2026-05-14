@@ -13,8 +13,6 @@ nav_order: 18
 
 # Глава 18. Медичний огляд осіб, які приймаються на військову службу за
 
-{% include chapter-context.html %}
-{% include amendment-history.html %}
 
 контрактом
 

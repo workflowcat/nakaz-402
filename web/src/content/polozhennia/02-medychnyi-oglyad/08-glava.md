@@ -13,8 +13,6 @@ nav_order: 8
 
 # Глава 8. Медичний огляд військовослужбовців
 
-{% include chapter-context.html %}
-{% include amendment-history.html %}
 
 які призначаються на посади та несуть службу у спеціальних спорудах
 

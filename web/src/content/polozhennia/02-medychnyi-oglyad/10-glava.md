@@ -13,8 +13,6 @@ nav_order: 10
 
 # Глава 10. Відбір кандидатів для навчання водолазній спеціальності в
 
-{% include chapter-context.html %}
-{% include amendment-history.html %}
 
 учбових організаціях ТСО України
 

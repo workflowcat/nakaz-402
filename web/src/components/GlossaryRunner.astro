@@ -1,0 +1,83 @@
+---
+// Auto-wraps abbreviations in <abbr> tooltips on every page.
+// Runs client-side after DOMContentLoaded.
+const glossary: Record<string, string> = {
+  'ЦВЛК': 'Центральна військово-лікарська комісія',
+  'ТЦК та СП': 'Територіальний центр комплектування та соціальної підтримки',
+  'ВЛК ВМС': 'Військово-лікарська комісія Військово-Морських Сил',
+  'НВМКЦ': 'Національний військово-медичний клінічний центр',
+  'ВМКЦ': 'Військово-медичний клінічний центр',
+  'ВВНЗ': 'Вищі військові навчальні заклади',
+  'ВЛК': 'Військово-лікарська комісія',
+  'ВЛЕ': 'Військово-лікарська експертиза',
+  'ЛЛК': 'Лікарсько-льотна комісія',
+  'ЛЛЕ': 'Лікарсько-льотна експертиза',
+  'ТДВ': 'Таблиці додаткових вимог до стану здоровʼя',
+  'ТЦК': 'Територіальний центр комплектування',
+  'МОУ': 'Міністерство оборони України',
+  'МОЗ': 'Міністерство охорони здоровʼя України',
+  'ДССТ': 'Державна спеціальна служба транспорту',
+  'НГУ': 'Національна гвардія України',
+  'ДПСУ': 'Державна прикордонна служба України',
+  'ССО': 'Сили спеціальних операцій',
+  'ДШВ': 'Десантно-штурмові війська',
+  'ЗСУ': 'Збройні Сили України',
+  'ПТК': 'Приймально-технічна комісія',
+  'УПР': 'Управління повітряним рухом',
+  'БпАК': 'Безпілотні авіаційні комплекси',
+  'НПА': 'Нормативно-правовий акт',
+  'РХ': 'Розклад хвороб',
+};
+---
+<script is:inline define:vars={{ glossary }}>
+(function() {
+  const terms = Object.keys(glossary).sort((a, b) => b.length - a.length);
+  const escaped = terms.map(t => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+  let regex;
+  try {
+    regex = new RegExp('(?<![\\p{L}\\p{N}])(' + escaped.join('|') + ')(?![\\p{L}\\p{N}])', 'gu');
+  } catch (_e) {
+    regex = new RegExp('(' + escaped.join('|') + ')', 'g');
+  }
+  const SKIP = new Set(['A','ABBR','CODE','PRE','SCRIPT','STYLE','TEXTAREA','INPUT','BUTTON','NAV','HEADER','FOOTER','KBD','SUMMARY','SVG']);
+  function isInSkipped(node) {
+    let p = node.parentElement;
+    while (p && p !== document.body) {
+      if (SKIP.has(p.tagName)) return true;
+      if (p.classList?.contains('no-glossary')) return true;
+      p = p.parentElement;
+    }
+    return false;
+  }
+  function processNode(node) {
+    if (isInSkipped(node)) return;
+    const text = node.nodeValue;
+    if (!text || text.length < 3) return;
+    regex.lastIndex = 0;
+    if (!regex.test(text)) return;
+    regex.lastIndex = 0;
+    const frag = document.createDocumentFragment();
+    let last = 0, m;
+    while ((m = regex.exec(text))) {
+      if (m.index > last) frag.appendChild(document.createTextNode(text.slice(last, m.index)));
+      const a = document.createElement('abbr');
+      a.title = glossary[m[1]];
+      a.textContent = m[1];
+      frag.appendChild(a);
+      last = m.index + m[1].length;
+    }
+    if (last < text.length) frag.appendChild(document.createTextNode(text.slice(last)));
+    node.parentNode.replaceChild(frag, node);
+  }
+  function run() {
+    const target = document.querySelector('main') || document.body;
+    const w = document.createTreeWalker(target, NodeFilter.SHOW_TEXT);
+    const nodes = [];
+    let n;
+    while ((n = w.nextNode())) nodes.push(n);
+    nodes.forEach(processNode);
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', run);
+  else run();
+})();
+</script>

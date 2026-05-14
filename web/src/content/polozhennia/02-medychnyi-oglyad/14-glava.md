@@ -13,8 +13,6 @@ nav_order: 14
 
 # Глава 14. Медичний огляд акванавтів
 
-{% include chapter-context.html %}
-{% include amendment-history.html %}
 
 <a id="p14.1"></a>
 ## 14.1.
