@@ -922,6 +922,67 @@ blockquote.amend-marker a[href*="zakon.rada.gov.ua/laws/show/z"] {
 .chapter-context .ch-meta-value a { color: var(--accent); }
 .chapter-context .ch-status-active { color: var(--op-insert); margin-left: auto; font-size: 0.78rem; }
 .chapter-context .ch-status-repealed { color: var(--op-repeal); margin-left: auto; font-size: 0.78rem; }
+.chapter-context .ch-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+  margin-top: var(--sp-3);
+  padding-top: var(--sp-3);
+  border-top: 1px solid var(--border);
+}
+.chapter-context .ch-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.3rem 0.7rem;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  text-decoration: none;
+  transition: all 0.12s;
+}
+.chapter-context .ch-action:hover {
+  color: var(--accent);
+  border-color: var(--accent-soft);
+  background: var(--accent-bg);
+}
+
+/* Per-punkt copy-ID button — додається JS'ом до кожного h2/h3 поряд з якорем */
+.punkt-id-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  margin-left: 0.6rem;
+  padding: 1px 6px;
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  font-weight: 400;
+  color: var(--text-muted);
+  background: var(--bg-subtle);
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  cursor: pointer;
+  opacity: 0;
+  transition: all 0.12s;
+  vertical-align: middle;
+}
+h2:hover .punkt-id-pill,
+h3:hover .punkt-id-pill { opacity: 0.8; }
+.punkt-id-pill:hover {
+  opacity: 1 !important;
+  color: var(--accent);
+  border-color: var(--accent-soft);
+  background: var(--accent-bg);
+}
+.punkt-id-pill.copied {
+  color: var(--op-insert);
+  border-color: var(--op-insert);
+  background: var(--op-insert-bg);
+  opacity: 1 !important;
+}
+.punkt-id-pill.copied::after { content: " ✓"; }
 
 
 /* =================================================================

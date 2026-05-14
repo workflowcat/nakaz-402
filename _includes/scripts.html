@@ -414,6 +414,64 @@
 })();
 
 // =============================================================
+// Per-punkt copy-ID pill — біля кожного h2/h3 пункту
+// =============================================================
+(function() {
+  function run() {
+    const main = document.querySelector('.site-main');
+    if (!main) return;
+
+    // Базовий id сторінки — з meta або з фронтматтера
+    // Знаходимо найвищий-рівневий якір (наприклад polozhennia.r1.gl2) щоб скласти повний id
+    // Беремо з body data-page-id, або з першого <a id="..."> який не починається з 'p'
+    // Простіше: для page.id (доступного через {{ page.id }} в Liquid) використати:
+    const pageId = document.body.dataset.pageId || '';
+
+    main.querySelectorAll('a[id^="p"]').forEach(a => {
+      // Знаходимо найближчий h2/h3 (далі або в parent'і)
+      let target = a.nextElementSibling;
+      while (target && !/^H[2-4]$/.test(target.tagName || '')) {
+        target = target.nextElementSibling;
+        if (!target || target.classList?.contains('amend-history')) break;
+      }
+      if (!target || !/^H[2-4]$/.test(target.tagName || '')) {
+        const par = a.parentElement;
+        if (par && /^H[2-4]$/.test(par.tagName)) target = par;
+      }
+      if (!target) return;
+
+      const anchor = a.id; // напр. "p1.4"
+      const fullId = pageId ? `${pageId}.${anchor}` : anchor;
+
+      const pill = document.createElement('button');
+      pill.className = 'punkt-id-pill no-glossary';
+      pill.type = 'button';
+      pill.title = `Копіювати ID: ${fullId}`;
+      pill.textContent = anchor;
+      pill.dataset.fullId = fullId;
+      pill.addEventListener('click', e => {
+        e.preventDefault();
+        e.stopPropagation();
+        navigator.clipboard?.writeText(fullId).then(() => {
+          pill.classList.add('copied');
+          pill.textContent = fullId;
+          setTimeout(() => {
+            pill.classList.remove('copied');
+            pill.textContent = anchor;
+          }, 1500);
+        }).catch(() => {
+          // fallback: prompt
+          window.prompt('Копіюй ID вручну:', fullId);
+        });
+      });
+      target.appendChild(pill);
+    });
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', run);
+  else run();
+})();
+
+// =============================================================
 // Flash при переході по якорю
 // =============================================================
 (function() {
