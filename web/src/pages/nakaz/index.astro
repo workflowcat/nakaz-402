@@ -1,0 +1,13 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import { getCollection, render } from 'astro:content';
+
+const all = await getCollection('nakaz');
+const entry = all[0];
+const { Content } = await render(entry);
+---
+<Layout title={entry.data.title} flavor="content">
+  <article class="prose-doc">
+    <Content />
+  </article>
+</Layout>

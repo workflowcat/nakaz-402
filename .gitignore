@@ -12,3 +12,9 @@ _site/
 .bundle/
 vendor/
 .claude/
+
+# Astro project (in /web)
+web/node_modules/
+web/dist/
+web/.astro/
+web/.vercel/

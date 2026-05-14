@@ -1,0 +1,57 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import { getCollection } from 'astro:content';
+
+const all = await getCollection('polozhennia');
+const chapters = all.filter(c => c.data.type === 'glava')
+  .sort((a, b) => {
+    const ap = a.data.parent_id || '';
+    const bp = b.data.parent_id || '';
+    if (ap !== bp) return ap.localeCompare(bp);
+    return (a.data.nav_order || 0) - (b.data.nav_order || 0);
+  });
+
+const rozdil1 = chapters.filter(c => c.data.parent_id === 'polozhennia.r1');
+const rozdil2 = chapters.filter(c => c.data.parent_id === 'polozhennia.r2');
+---
+<Layout title="Положення">
+  <h1 class="text-3xl font-bold tracking-tight mt-6 mb-6">Положення про військово-лікарську експертизу</h1>
+
+  <section class="mb-10">
+    <h2 class="text-lg font-semibold mb-3">Розділ I. Основи організації ВЛЕ</h2>
+    <ul class="divide-y divide-ink-200 dark:divide-ink-800 border-y border-ink-200 dark:border-ink-800">
+      {rozdil1.map(c => (
+        <li>
+          <a href={`/polozhennia/${c.id.replace(/\.md$/, '')}/`} class="block py-3 px-2 hover:bg-ink-50 dark:hover:bg-ink-900">
+            <div class="flex items-baseline justify-between gap-4">
+              <div>
+                <div class="font-medium">{c.data.title}</div>
+                <div class="text-xs text-ink-500 mt-0.5 font-mono">{c.data.id}{c.data.stub && ' · стаб'}</div>
+              </div>
+              <span class="text-ink-400">→</span>
+            </div>
+          </a>
+        </li>
+      ))}
+    </ul>
+  </section>
+
+  <section class="mb-10">
+    <h2 class="text-lg font-semibold mb-3">Розділ II. Медичний огляд</h2>
+    <ul class="divide-y divide-ink-200 dark:divide-ink-800 border-y border-ink-200 dark:border-ink-800">
+      {rozdil2.map(c => (
+        <li>
+          <a href={`/polozhennia/${c.id.replace(/\.md$/, '')}/`} class="block py-3 px-2 hover:bg-ink-50 dark:hover:bg-ink-900">
+            <div class="flex items-baseline justify-between gap-4">
+              <div>
+                <div class="font-medium">{c.data.title}</div>
+                <div class="text-xs text-ink-500 mt-0.5 font-mono">{c.data.id}{c.data.stub && ' · стаб'}</div>
+              </div>
+              <span class="text-ink-400">→</span>
+            </div>
+          </a>
+        </li>
+      ))}
+    </ul>
+  </section>
+</Layout>

@@ -1,0 +1,62 @@
+---
+import '../styles/global.css';
+import Header from '../components/Header.astro';
+
+interface Props {
+  title?: string;
+  description?: string;
+  flavor?: 'tool' | 'content';
+}
+const { title, description, flavor = 'tool' } = Astro.props;
+const siteName = 'Наказ МОУ № 402';
+const fullTitle = title ? `${title} · ${siteName}` : siteName;
+const desc = description ?? 'Машино-читабельна git-редакція Наказу МОУ № 402 (військово-лікарська експертиза)';
+---
+<!doctype html>
+<html lang="uk" class="">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="color-scheme" content="light dark" />
+    <meta name="theme-color" content="#7253ed" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0a0a0f" media="(prefers-color-scheme: dark)" />
+    <title>{fullTitle}</title>
+    <meta name="description" content={desc} />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+
+    <script is:inline>
+      (() => {
+        try {
+          const saved = localStorage.getItem('theme');
+          if (saved === 'dark' || (!saved && matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark');
+          }
+        } catch (e) {}
+      })();
+    </script>
+  </head>
+  <body class="min-h-screen flex flex-col">
+    <a href="#main" class="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 focus:px-3 focus:py-1 focus:bg-accent-500 focus:text-white focus:rounded">До контенту</a>
+    <Header />
+    <main id="main" class="flex-1">
+      <div class:list={[
+        "mx-auto px-5 py-8",
+        flavor === 'content' ? 'max-w-3xl' : 'max-w-7xl',
+      ]}>
+        <slot />
+      </div>
+    </main>
+    <footer class="border-t border-ink-200 dark:border-ink-800 mt-12 py-6 text-sm text-ink-500">
+      <div class="max-w-7xl mx-auto px-5 flex flex-wrap gap-4 justify-between">
+        <p>
+          Авторитетним джерелом залишається <a href="https://zakon.rada.gov.ua/laws/show/z1109-08" class="underline hover:text-accent-500" target="_blank" rel="noopener">текст на zakon.rada.gov.ua</a>. Цей репо — інженерна реплікація під CC0.
+        </p>
+        <div class="flex gap-3">
+          <a href="https://github.com/workflowcat/nakaz-402" class="hover:text-accent-500" target="_blank" rel="noopener">GitHub</a>
+          <span class="opacity-50">·</span>
+          <a href="/changes/" class="hover:text-accent-500">Зміни</a>
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>

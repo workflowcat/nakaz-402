@@ -1,0 +1,28 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import { getCollection } from 'astro:content';
+
+const all = await getCollection('dodatky');
+const dodatky = all
+  .filter(d => d.data.type === 'dodatok')
+  .sort((a, b) => (a.data.nav_order || 0) - (b.data.nav_order || 0));
+---
+<Layout title="Додатки">
+  <h1 class="text-3xl font-bold tracking-tight mt-6 mb-6">Додатки</h1>
+  <ul class="divide-y divide-ink-200 dark:divide-ink-800 border-y border-ink-200 dark:border-ink-800">
+    {dodatky.map(d => (
+      <li>
+        <a href={`/dodatky/${d.id.replace(/\.md$/, '')}/`} class="block py-3 px-2 hover:bg-ink-50 dark:hover:bg-ink-900">
+          <div class="flex items-baseline justify-between gap-4">
+            <div>
+              <div class="font-medium">{d.data.title}</div>
+              {d.data.official_title && <div class="text-sm text-ink-500 mt-0.5">{d.data.official_title}</div>}
+              <div class="text-xs text-ink-500 mt-0.5 font-mono">{d.data.id}{d.data.stub && ' · стаб'}</div>
+            </div>
+            <span class="text-ink-400">→</span>
+          </div>
+        </a>
+      </li>
+    ))}
+  </ul>
+</Layout>
