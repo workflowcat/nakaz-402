@@ -7,6 +7,7 @@ const realChapters = chapters.filter(c => c.data.type === 'glava');
 const filled = realChapters.filter(c => !c.data.stub);
 const drafts = await getCollection('drafts');
 const activeDrafts = drafts.filter((d: any) => d.data.status !== 'rejected' && d.data.status !== 'adopted');
+const rh = await getCollection('rh');
 ---
 <Layout title="Головна">
   <section class="py-12 sm:py-16">
@@ -22,12 +23,14 @@ const activeDrafts = drafts.filter((d: any) => d.data.status !== 'rejected' && d
       видима у git, а Розклад хвороб — таблиця, з якої можна порахувати придатність скриптом.
     </p>
     <div class="mt-6 flex flex-wrap gap-2">
-      <a href="/changes/" class="inline-flex items-center px-4 py-2 rounded-md bg-accent-500 text-white text-sm font-medium hover:bg-accent-600 transition-colors">Усі зміни →</a>
+      <a href="/rh/calculator/" class="inline-flex items-center px-4 py-2 rounded-md bg-accent-500 text-white text-sm font-medium hover:bg-accent-600 transition-colors">
+        Калькулятор придатності →
+      </a>
+      <a href="/changes/" class="inline-flex items-center px-4 py-2 rounded-md border border-ink-200 dark:border-ink-700 text-sm font-medium hover:border-accent-500 hover:text-accent-600 dark:hover:text-accent-300 transition-colors">Усі зміни</a>
       <a href="/drafts/" class="inline-flex items-center px-4 py-2 rounded-md border border-accent-500 text-accent-600 dark:text-accent-300 text-sm font-medium hover:bg-accent-50 dark:hover:bg-accent-900/20 transition-colors">
         Драфти {activeDrafts.length > 0 && <span class="ml-1.5 px-1.5 py-0.5 rounded bg-accent-500 text-white text-[10px] font-mono">{activeDrafts.length}</span>}
       </a>
       <a href="/polozhennia/" class="inline-flex items-center px-4 py-2 rounded-md border border-ink-200 dark:border-ink-700 text-sm font-medium hover:border-accent-500 hover:text-accent-600 dark:hover:text-accent-300 transition-colors">Положення</a>
-      <a href="/nakaz/" class="inline-flex items-center px-4 py-2 rounded-md border border-ink-200 dark:border-ink-700 text-sm font-medium hover:border-accent-500 hover:text-accent-600 dark:hover:text-accent-300 transition-colors">Прочитати наказ</a>
     </div>
   </section>
 
@@ -45,8 +48,8 @@ const activeDrafts = drafts.filter((d: any) => d.data.status !== 'rejected' && d
       <div class="text-[11px] uppercase tracking-wider text-ink-500 mt-1 font-medium">амендментів</div>
     </div>
     <div class="bg-ink-50 dark:bg-ink-900 border-l-2 border-accent-500 px-4 py-3 rounded-r-md">
-      <div class="text-3xl font-bold tabular-nums tracking-tight">2008—2025</div>
-      <div class="text-[11px] uppercase tracking-wider text-ink-500 mt-1 font-medium">діапазон</div>
+      <div class="text-3xl font-bold tabular-nums tracking-tight">{rh.length}</div>
+      <div class="text-[11px] uppercase tracking-wider text-ink-500 mt-1 font-medium">статей РХ</div>
     </div>
   </section>
 
@@ -71,6 +74,36 @@ const activeDrafts = drafts.filter((d: any) => d.data.status !== 'rejected' && d
       ))}
     </ul>
     <a href="/polozhennia/" class="inline-block mt-4 text-sm text-accent-600 dark:text-accent-300 hover:underline">Усі {realChapters.length} глав →</a>
+  </section>
+
+  <section class="mt-16">
+    <h2 class="text-xl font-bold tracking-tight mb-2 pt-3 border-t border-ink-200 dark:border-ink-800 relative">
+      <span class="absolute -top-px left-0 w-9 h-px bg-accent-500"></span>
+      Якщо вас викликають на ВЛК
+    </h2>
+    <p class="text-sm text-ink-500 mb-5 max-w-3xl leading-relaxed">
+      Для лікарів-методистів, юристів, кандидатів на службу та їхніх рідних.
+      Розклад хвороб — це таблиця, у якій для кожної нозологічної групи
+      і ступеня тяжкості визначено категорію придатності окремо для
+      4 контингентів (призовники / строкова / офіцери / військовозобов'язані).
+    </p>
+    <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+      <a href="/rh/calculator/" class="block p-4 rounded-md border border-accent-300 dark:border-accent-700 bg-accent-50/40 dark:bg-accent-900/10 hover:bg-accent-50 dark:hover:bg-accent-900/20 transition-colors">
+        <div class="text-sm font-medium text-accent-600 dark:text-accent-300 mb-1">🧮 Калькулятор</div>
+        <div class="font-medium mb-1">Підсумкова категорія</div>
+        <div class="text-xs text-ink-500">Контингент + список діагнозів → категорія А/Б/В/Г/Д з поясненням. Підтримує комбінації.</div>
+      </a>
+      <a href="/rh/" class="block p-4 rounded-md border border-ink-200 dark:border-ink-800 hover:border-accent-500 hover:bg-ink-50 dark:hover:bg-ink-900 transition-colors">
+        <div class="text-sm font-medium text-accent-600 dark:text-accent-300 mb-1">📋 Розклад хвороб</div>
+        <div class="font-medium mb-1">{rh.length} {rh.length === 1 ? 'стаття' : rh.length < 5 ? 'статті' : 'статей'}</div>
+        <div class="text-xs text-ink-500">Таблиця категорій для всіх 4 граф. Зараз заповнено демо — повне наповнення в roadmap.</div>
+      </a>
+      <a href="/api/rh/meta.json" class="block p-4 rounded-md border border-ink-200 dark:border-ink-800 hover:border-accent-500 hover:bg-ink-50 dark:hover:bg-ink-900 transition-colors">
+        <div class="text-sm font-medium text-accent-600 dark:text-accent-300 mb-1">🔌 API РХ</div>
+        <div class="font-medium mb-1">JSON для інтеграцій</div>
+        <div class="text-xs text-ink-500">Категорії з severity-індексом, графи, formal combination rule. Для скриптів, ботів, AI-агентів.</div>
+      </a>
+    </div>
   </section>
 
   <section class="mt-16">
