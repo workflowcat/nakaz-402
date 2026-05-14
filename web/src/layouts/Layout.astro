@@ -8,11 +8,41 @@ interface Props {
   title?: string;
   description?: string;
   flavor?: 'tool' | 'content';
+  ogType?: 'website' | 'article';
+  jsonLd?: Record<string, unknown> | Record<string, unknown>[];
 }
-const { title, description, flavor = 'tool' } = Astro.props;
+const { title, description, flavor = 'tool', ogType, jsonLd } = Astro.props;
 const siteName = 'Наказ МОУ № 402';
 const fullTitle = title ? `${title} · ${siteName}` : siteName;
 const desc = description ?? 'Машино-читабельна git-редакція Наказу МОУ № 402 (військово-лікарська експертиза)';
+
+const siteUrl = 'https://nakaz-402.vercel.app';
+const canonical = new URL(Astro.url.pathname, siteUrl).toString();
+const ogImage = `${siteUrl}/og-image.svg`;
+const resolvedOgType = ogType ?? (flavor === 'content' ? 'article' : 'website');
+
+// Default JSON-LD: site-level WebSite. Pages can override.
+const defaultLd = {
+  '@context': 'https://schema.org',
+  '@type': 'WebSite',
+  name: siteName,
+  url: siteUrl,
+  inLanguage: 'uk-UA',
+  description: desc,
+  license: 'https://creativecommons.org/publicdomain/zero/1.0/',
+  isAccessibleForFree: true,
+  potentialAction: {
+    '@type': 'SearchAction',
+    target: `${siteUrl}/?q={search_term_string}`,
+    'query-input': 'required name=search_term_string',
+  },
+  publisher: {
+    '@type': 'Organization',
+    name: 'workflowcat/nakaz-402',
+    url: 'https://github.com/workflowcat/nakaz-402',
+  },
+};
+const ldData = jsonLd ?? defaultLd;
 ---
 <!doctype html>
 <html lang="uk" class="">
@@ -24,7 +54,29 @@ const desc = description ?? 'Машино-читабельна git-редакц�
     <meta name="theme-color" content="#0a0a0f" media="(prefers-color-scheme: dark)" />
     <title>{fullTitle}</title>
     <meta name="description" content={desc} />
+    <link rel="canonical" href={canonical} />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+
+    {/* OpenGraph */}
+    <meta property="og:site_name" content={siteName} />
+    <meta property="og:title" content={fullTitle} />
+    <meta property="og:description" content={desc} />
+    <meta property="og:type" content={resolvedOgType} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:image" content={ogImage} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:type" content="image/svg+xml" />
+    <meta property="og:locale" content="uk_UA" />
+
+    {/* Twitter Card */}
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={fullTitle} />
+    <meta name="twitter:description" content={desc} />
+    <meta name="twitter:image" content={ogImage} />
+
+    {/* JSON-LD */}
+    <script type="application/ld+json" set:html={JSON.stringify(ldData)} />
 
     <script is:inline>
       (() => {

@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0a0a0f"/>
+      <stop offset="1" stop-color="#1a1530"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#a285ff"/>
+      <stop offset="1" stop-color="#7253ed"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  <g transform="translate(80, 80)">
+    <rect width="140" height="140" rx="32" fill="url(#accent)"/>
+    <text x="70" y="100" font-family="-apple-system, system-ui, 'Segoe UI', Inter, sans-serif"
+          font-size="68" font-weight="800" text-anchor="middle"
+          fill="#ffffff" letter-spacing="-2">402</text>
+  </g>
+  <text x="80" y="320" font-family="-apple-system, system-ui, 'Segoe UI', Inter, sans-serif"
+        font-size="56" font-weight="700" fill="#ffffff" letter-spacing="-1.5">
+    Наказ Міністерства оборони № 402
+  </text>
+  <text x="80" y="380" font-family="-apple-system, system-ui, 'Segoe UI', Inter, sans-serif"
+        font-size="32" font-weight="500" fill="#a285ff">
+    Машино-читабельна git-редакція
+  </text>
+  <text x="80" y="430" font-family="-apple-system, system-ui, 'Segoe UI', Inter, sans-serif"
+        font-size="28" fill="#c4c4d0">
+    Положення про військово-лікарську експертизу
+  </text>
+  <g transform="translate(80, 510)" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="22" fill="#7d7da0">
+    <text>26 глав · 17 додатків · CC0 · git-керована</text>
+  </g>
+  <g transform="translate(1040, 540)" font-family="ui-monospace, monospace" font-size="20" fill="#5a5a78">
+    <text text-anchor="end">nakaz-402.vercel.app</text>
+  </g>
+</svg>
