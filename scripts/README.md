@@ -30,6 +30,28 @@ python3 scripts/lint_frontmatter.py
 Запускається автоматично в CI на кожен PR — див.
 [.github/workflows/lint.yml](../.github/workflows/lint.yml).
 
+## `fitness_calculator.py`
+
+Демонстрація принципу «дані → інструменти». Читає YAML-файли статей
+Розкладу хвороб і відповідає на типові запити.
+
+```bash
+# Перелічити статті, що є в репо
+python3 scripts/fitness_calculator.py --list
+
+# Деталі однієї статті
+python3 scripts/fitness_calculator.py --stattia 42
+
+# Прицільно: стаття + підпункт + графа
+python3 scripts/fitness_calculator.py --stattia 1 --punkt б --graf III
+
+# JSON-вивід для інтеграції
+python3 scripts/fitness_calculator.py --stattia 42 --json
+```
+
+Це — приклад того, що дає винесення «конфігів» в YAML: реальний інструмент
+на 200 рядках Python.
+
 ## `changelog_from_amendments.py`
 
 Генерує `CHANGELOG.md` з `meta/amendments.yaml`. Демонстрація принципу
