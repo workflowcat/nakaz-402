@@ -1,8 +1,8 @@
 blank_issues_enabled: true
 contact_links:
-  - name: 📖 Офіційний текст Наказу 402
+  - name: 📖 Офіційний текст Наказу 402 (rada.gov.ua)
     url: https://zakon.rada.gov.ua/laws/show/z1109-08
     about: Це інженерна реплікація. Юридично авторитетний текст — на rada.gov.ua.
-  - name: 🤔 Питання або обговорення підходу
-    url: https://github.com/${{ github.repository }}/discussions
-    about: Питання щодо архітектури, схеми frontmatter, конвенцій — у Discussions.
+  # Discussion link для цього репо доступне після того, як власник
+  # увімкне Discussions у Settings → Features → Discussions.
+  # Тоді URL буде виду https://github.com/<owner>/<repo>/discussions

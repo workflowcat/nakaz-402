@@ -1,5 +1,10 @@
 # Наказ МОУ № 402: гідхабізація
 
+<!-- Бейджі з'являться зеленими після першого push у main:
+[![Lint](https://github.com/<owner>/nakaz-402/actions/workflows/lint.yml/badge.svg)](../../actions/workflows/lint.yml)
+[![Pages](https://github.com/<owner>/nakaz-402/actions/workflows/pages.yml/badge.svg)](../../actions/workflows/pages.yml)
+-->
+
 Спроба перевести **Наказ Міністерства оборони України № 402 від 14.08.2008**
 «Про затвердження Положення про військово-лікарську експертизу в Збройних
 Силах України» (зареєстровано в Мін'юсті 26.08.2008 за № 1109/15800) у формат,
