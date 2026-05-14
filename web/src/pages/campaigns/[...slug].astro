@@ -1,0 +1,240 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import { getCollection, render } from 'astro:content';
+import { buildPunktIdIndex, lintDraft, lintTerminology } from '../../lib/drafts';
+
+export async function getStaticPaths() {
+  const campaigns = await getCollection('campaigns');
+  return campaigns
+    .filter((c) => !c.id.toLowerCase().endsWith('readme.md'))
+    .map((c) => ({
+      params: { slug: c.id.replace(/\.md$/, '') },
+      props: { entry: c },
+    }));
+}
+
+const { entry } = Astro.props;
+const { Content } = await render(entry);
+const drafts = await getCollection('drafts');
+const draftsById = new Map(drafts.map((d) => [d.data.id, d]));
+
+const memberDrafts = (entry.data.member_drafts ?? []).map((id: string) => draftsById.get(id)).filter(Boolean);
+
+// Aggregate lint across member drafts.
+const knownIds = await buildPunktIdIndex();
+let totalErrors = 0;
+let totalWarnings = 0;
+const draftLint = new Map<string, { errors: number; warnings: number }>();
+for (const d of memberDrafts) {
+  const others = drafts.filter((x) => x.id !== d.id);
+  const findings = [
+    ...lintDraft(d as any, knownIds, others as any),
+    ...lintTerminology(d as any),
+  ];
+  const errors = findings.filter((f) => f.level === 'error').length;
+  const warnings = findings.filter((f) => f.level === 'warning').length;
+  draftLint.set(d.data.id, { errors, warnings });
+  totalErrors += errors;
+  totalWarnings += warnings;
+}
+
+// Aggregate affected punkti and глав.
+const affectedTargets = new Set<string>();
+const affectedGlavas = new Set<string>();
+for (const d of memberDrafts) {
+  for (const op of (d.data.operations ?? [])) {
+    const refs = [op.target, op.after, op.before].filter(Boolean);
+    for (const r of refs) {
+      affectedTargets.add(r);
+      const glavaMatch = r.match(/^polozhennia\.r\d+\.gl\d+/);
+      if (glavaMatch) affectedGlavas.add(glavaMatch[0]);
+    }
+  }
+}
+
+const STATUS_LABEL: Record<string, string> = {
+  active: 'активна',
+  concluded: 'завершена',
+  paused: 'призупинена',
+  dropped: 'відмінено',
+};
+const STATUS_COLOR: Record<string, string> = {
+  active:    'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300',
+  concluded: 'bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300',
+  paused:    'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300',
+  dropped:   'bg-ink-200 text-ink-600 dark:bg-ink-800 dark:text-ink-400',
+};
+const DRAFT_STATUS_LABEL: Record<string, string> = {
+  draft: 'чернетка', review: 'на огляді', adopted: 'прийнято', rejected: 'відхилено',
+};
+const DRAFT_STATUS_COLOR: Record<string, string> = {
+  draft: 'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300',
+  review: 'bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300',
+  adopted: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300',
+  rejected: 'bg-ink-200 text-ink-600 dark:bg-ink-800 dark:text-ink-400',
+};
+
+function fmtDate(v: any): string {
+  if (!v) return '';
+  if (v instanceof Date) return v.toISOString().slice(0, 10);
+  const m = String(v).match(/\d{4}-\d{2}-\d{2}/);
+  return m ? m[0] : String(v).slice(0, 10);
+}
+---
+<Layout
+  title={entry.data.title}
+  description={entry.data.goal ?? entry.data.title}
+  flavor="content"
+>
+  <div class="mb-4 px-3 py-2 rounded-md bg-amber-50 dark:bg-amber-900/20 border-l-2 border-amber-500 text-xs text-amber-800 dark:text-amber-200">
+    <strong>Робочий простір кампанії.</strong> Це не офіційні документи МОУ — це
+    координація advocacy-зусиль громади.
+  </div>
+
+  <nav class="text-sm text-ink-500 mb-4">
+    <a href="/campaigns/" class="hover:text-accent-500">Кампанії</a>
+    <span class="mx-2 opacity-50">›</span>
+    <span>{entry.data.id}</span>
+  </nav>
+
+  <div class="flex items-baseline gap-3 mb-2 flex-wrap">
+    <span class:list={['text-[10px] font-medium uppercase tracking-wider px-1.5 py-0.5 rounded', STATUS_COLOR[entry.data.status] ?? STATUS_COLOR.active]}>{STATUS_LABEL[entry.data.status] ?? entry.data.status}</span>
+    {entry.data.owner && <span class="text-xs text-ink-500 font-mono">👤 {entry.data.owner}</span>}
+    {entry.data.created_at && <span class="text-xs text-ink-500 font-mono">📅 {fmtDate(entry.data.created_at)}</span>}
+  </div>
+
+  <h1 class="text-3xl font-bold tracking-tight mb-3">{entry.data.title}</h1>
+
+  {entry.data.goal && (
+    <section class="mb-8 rounded-md border border-accent-300 dark:border-accent-700 bg-accent-50/40 dark:bg-accent-900/10 p-4">
+      <div class="text-xs uppercase tracking-wider text-accent-600 dark:text-accent-300 font-medium mb-2">Мета кампанії</div>
+      <p class="leading-relaxed">{entry.data.goal}</p>
+    </section>
+  )}
+
+  <section class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-8">
+    <div class="bg-ink-50 dark:bg-ink-900 border-l-2 border-accent-500 px-3 py-2 rounded-r-md">
+      <div class="text-2xl font-bold tabular-nums">{memberDrafts.length}</div>
+      <div class="text-[10px] uppercase tracking-wider text-ink-500 mt-1 font-medium">драфтів</div>
+    </div>
+    <div class="bg-ink-50 dark:bg-ink-900 border-l-2 border-accent-500 px-3 py-2 rounded-r-md">
+      <div class="text-2xl font-bold tabular-nums">{affectedTargets.size}</div>
+      <div class="text-[10px] uppercase tracking-wider text-ink-500 mt-1 font-medium">пунктів зачіпає</div>
+    </div>
+    <div class="bg-ink-50 dark:bg-ink-900 border-l-2 border-accent-500 px-3 py-2 rounded-r-md">
+      <div class="text-2xl font-bold tabular-nums">{affectedGlavas.size}</div>
+      <div class="text-[10px] uppercase tracking-wider text-ink-500 mt-1 font-medium">глав зачіпає</div>
+    </div>
+    <div class:list={[
+      'border-l-2 px-3 py-2 rounded-r-md',
+      totalErrors > 0 ? 'bg-red-50 dark:bg-red-900/20 border-red-500' :
+      totalWarnings > 0 ? 'bg-amber-50 dark:bg-amber-900/20 border-amber-500' :
+      'bg-emerald-50 dark:bg-emerald-900/20 border-emerald-500'
+    ]}>
+      <div class="text-2xl font-bold tabular-nums">
+        {totalErrors > 0 ? `${totalErrors}✖` : totalWarnings > 0 ? `${totalWarnings}⚠` : '✓'}
+      </div>
+      <div class="text-[10px] uppercase tracking-wider text-ink-500 mt-1 font-medium">
+        {totalErrors > 0 ? 'помилок' : totalWarnings > 0 ? 'попереджень' : 'все чисто'}
+      </div>
+    </div>
+  </section>
+
+  {memberDrafts.length > 0 && (
+    <section class="mb-8">
+      <h2 class="text-base font-semibold mb-3">Драфти кампанії</h2>
+      <ul class="space-y-2">
+        {memberDrafts.map((d: any) => {
+          const lint = draftLint.get(d.data.id);
+          return (
+            <li class="rounded-md border border-ink-200 dark:border-ink-800 p-3 flex items-baseline gap-3 flex-wrap">
+              <span class:list={['text-[10px] font-medium uppercase tracking-wider px-1.5 py-0.5 rounded', DRAFT_STATUS_COLOR[d.data.status] ?? DRAFT_STATUS_COLOR.draft]}>{DRAFT_STATUS_LABEL[d.data.status] ?? d.data.status}</span>
+              <a href={`/drafts/${d.id.replace(/\.md$/, '')}/`} class="font-medium text-accent-700 dark:text-accent-300 hover:underline flex-1 min-w-0">{d.data.title}</a>
+              {lint && (
+                <span class="text-xs font-mono flex gap-2">
+                  {lint.errors > 0 && <span class="text-red-600 dark:text-red-300">{lint.errors}✖</span>}
+                  {lint.warnings > 0 && <span class="text-amber-600 dark:text-amber-300">{lint.warnings}⚠</span>}
+                  {lint.errors === 0 && lint.warnings === 0 && <span class="text-emerald-600 dark:text-emerald-300">✓</span>}
+                </span>
+              )}
+            </li>
+          );
+        })}
+      </ul>
+    </section>
+  )}
+
+  {entry.data.target_audience && entry.data.target_audience.length > 0 && (
+    <section class="mb-8">
+      <h2 class="text-base font-semibold mb-3">Цілі лобіювання</h2>
+      <ul class="space-y-1 text-sm">
+        {entry.data.target_audience.map((a: string) => <li class="flex items-baseline gap-2"><span class="text-ink-400">→</span><span>{a}</span></li>)}
+      </ul>
+    </section>
+  )}
+
+  {entry.data.key_messages && entry.data.key_messages.length > 0 && (
+    <section class="mb-8">
+      <h2 class="text-base font-semibold mb-3">Ключові меседжі</h2>
+      <ol class="space-y-2 text-sm">
+        {entry.data.key_messages.map((m: string, i: number) => (
+          <li class="rounded-md border-l-2 border-accent-500 bg-accent-50/40 dark:bg-accent-900/10 px-3 py-2">
+            <span class="font-mono text-xs text-ink-500 mr-2">#{i + 1}</span>
+            {m}
+          </li>
+        ))}
+      </ol>
+    </section>
+  )}
+
+  {entry.data.metrics_of_success && entry.data.metrics_of_success.length > 0 && (
+    <section class="mb-8">
+      <h2 class="text-base font-semibold mb-3">Метрики успіху</h2>
+      <ul class="space-y-1 text-sm">
+        {entry.data.metrics_of_success.map((m: string) => <li class="flex items-baseline gap-2"><span class="text-emerald-500">✓</span><span>{m}</span></li>)}
+      </ul>
+    </section>
+  )}
+
+  {entry.data.next_actions && entry.data.next_actions.length > 0 && (
+    <section class="mb-8">
+      <h2 class="text-base font-semibold mb-3">Наступні кроки</h2>
+      <ol class="space-y-2 text-sm">
+        {entry.data.next_actions.map((a: string, i: number) => (
+          <li class="flex items-baseline gap-3">
+            <span class="font-mono text-xs text-ink-500">{i + 1}.</span>
+            <span>{a}</span>
+          </li>
+        ))}
+      </ol>
+    </section>
+  )}
+
+  {entry.body && entry.body.trim().length > 0 && (
+    <>
+      <h2 class="text-base font-semibold mt-10 mb-3">Розгорнутий бриф</h2>
+      <article class="prose-doc">
+        <Content />
+      </article>
+    </>
+  )}
+
+  {entry.data.references && entry.data.references.length > 0 && (
+    <section class="mt-8">
+      <h2 class="text-base font-semibold mb-3">Посилання</h2>
+      <ul class="space-y-1 text-sm">
+        {entry.data.references.map((r: any) => (
+          <li>
+            <a href={r.url} target="_blank" rel="noopener" class="text-accent-600 dark:text-accent-300 hover:underline">{r.title}</a>
+          </li>
+        ))}
+      </ul>
+    </section>
+  )}
+
+  <div class="mt-8 pt-6 border-t border-ink-200 dark:border-ink-800 flex flex-wrap gap-3">
+    <a href={`https://github.com/workflowcat/nakaz-402/edit/main/campaigns/${entry.id}`} target="_blank" rel="noopener" class="text-sm inline-flex items-center gap-2 px-3 py-1.5 rounded-md border border-ink-200 dark:border-ink-700 hover:border-accent-500 hover:text-accent-600">
+      ✏ Редагувати на GitHub
+    </a>
+  </div>
+</Layout>

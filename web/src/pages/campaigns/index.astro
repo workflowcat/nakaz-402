@@ -1,0 +1,70 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import { getCollection } from 'astro:content';
+
+const campaigns = await getCollection('campaigns');
+const drafts = await getCollection('drafts');
+const draftsById = new Map(drafts.map((d) => [d.data.id, d]));
+
+const STATUS_LABEL: Record<string, string> = {
+  active: 'активна',
+  concluded: 'завершена',
+  paused: 'призупинена',
+  dropped: 'відмінено',
+};
+const STATUS_COLOR: Record<string, string> = {
+  active:    'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300',
+  concluded: 'bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300',
+  paused:    'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300',
+  dropped:   'bg-ink-200 text-ink-600 dark:bg-ink-800 dark:text-ink-400',
+};
+---
+<Layout
+  title="Кампанії"
+  description="Advocacy-кампанії: набори пов'язаних драфтів з спільною метою і стратегією."
+>
+  <div class="mb-4 px-4 py-3 rounded-md bg-amber-50 dark:bg-amber-900/20 border-l-2 border-amber-500 text-sm text-amber-800 dark:text-amber-200 mt-6">
+    <strong>Це не офіційні документи.</strong>
+    Кампанії — це робочий простір для координації advocacy-зусиль:
+    Veteran Hub, Right to Protection, БМА, юристи МОУ, ЦВЛК-експерти
+    публікують тут координовані набори правок з спільною стратегією і
+    меседжингом.
+  </div>
+
+  <h1 class="text-3xl font-bold tracking-tight mt-6 mb-3">Кампанії</h1>
+  <p class="text-ink-500 mb-3 max-w-3xl leading-relaxed">
+    Окремий драфт — це одна правка. Кампанія — це декілька правок з спільною
+    метою і планом просування. Тут видно, які питання реально просувають
+    на рівні нормотворення, хто веде, які тези використовуються і які
+    наступні кроки.
+  </p>
+  <p class="text-sm text-ink-500 mb-8">
+    {campaigns.length} {campaigns.length === 1 ? 'кампанія' : campaigns.length < 5 ? 'кампанії' : 'кампаній'} ·
+    <a href="https://github.com/workflowcat/nakaz-402/tree/main/campaigns" target="_blank" rel="noopener" class="text-accent-600 dark:text-accent-300 underline">campaigns/ на GitHub</a>
+  </p>
+
+  <ul class="space-y-4">
+    {campaigns.map((c: any) => {
+      const memberDrafts = c.data.member_drafts.map((id: string) => draftsById.get(id)).filter(Boolean);
+      const slug = c.id.replace(/\.md$/, '');
+      return (
+        <li>
+          <a href={`/campaigns/${slug}/`} class="block p-5 rounded-md border border-ink-200 dark:border-ink-800 hover:border-accent-500 hover:bg-ink-50 dark:hover:bg-ink-900 transition-colors">
+            <div class="flex items-baseline gap-3 flex-wrap mb-2">
+              <span class:list={['text-[10px] font-medium uppercase tracking-wider px-1.5 py-0.5 rounded', STATUS_COLOR[c.data.status] ?? STATUS_COLOR.active]}>{STATUS_LABEL[c.data.status] ?? c.data.status}</span>
+              <span class="font-mono text-xs text-ink-500">{c.data.id}</span>
+              {c.data.owner && <span class="text-xs text-ink-500">· {c.data.owner}</span>}
+            </div>
+            <div class="text-lg font-semibold mb-2">{c.data.title}</div>
+            {c.data.goal && <div class="text-sm text-ink-600 dark:text-ink-400 mb-3 leading-relaxed">{c.data.goal}</div>}
+            <div class="flex items-baseline gap-4 text-xs text-ink-500 flex-wrap">
+              <span><strong>{memberDrafts.length}</strong> {memberDrafts.length === 1 ? 'драфт' : memberDrafts.length < 5 ? 'драфти' : 'драфтів'}</span>
+              {c.data.target_audience && <span><strong>{c.data.target_audience.length}</strong> цілей лобіювання</span>}
+              {c.data.next_actions && <span><strong>{c.data.next_actions.length}</strong> наступних кроків</span>}
+            </div>
+          </a>
+        </li>
+      );
+    })}
+  </ul>
+</Layout>

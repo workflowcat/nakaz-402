@@ -126,4 +126,26 @@ const rh = defineCollection({
   }).passthrough(),
 });
 
-export const collections = { polozhennia, nakaz, dodatky, drafts, rh };
+// Advocacy-кампанії — пов'язані драфти з спільною метою.
+const campaigns = defineCollection({
+  loader: glob({ pattern: '[0-9]*.md', base: './src/content/campaigns' }),
+  schema: z.object({
+    id: z.string(),
+    title: z.string(),
+    owner: z.string().optional(),
+    created_at: z.union([z.string(), z.date()]).optional(),
+    status: z.enum(['active', 'concluded', 'paused', 'dropped']).default('active'),
+    goal: z.string().optional(),
+    target_audience: z.array(z.string()).optional(),
+    member_drafts: z.array(z.string()).default([]),
+    key_messages: z.array(z.string()).optional(),
+    metrics_of_success: z.array(z.string()).optional(),
+    next_actions: z.array(z.string()).optional(),
+    references: z.array(z.object({
+      title: z.string(),
+      url: z.string(),
+    })).optional(),
+  }).passthrough(),
+});
+
+export const collections = { polozhennia, nakaz, dodatky, drafts, rh, campaigns };
