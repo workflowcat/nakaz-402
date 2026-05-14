@@ -414,6 +414,158 @@
 })();
 
 // =============================================================
+// Draft amendment modal — form → live YAML/MD preview → GitHub edit URLs
+// =============================================================
+(function() {
+  const triggers = document.querySelectorAll('[data-draft-amendment]');
+  const overlay  = document.getElementById('draft-overlay');
+  if (!overlay || !triggers.length) return;
+
+  const affected   = document.getElementById('dr-affected');
+  const opSel      = document.getElementById('dr-op');
+  const orderIn    = document.getElementById('dr-order');
+  const dateIn     = document.getElementById('dr-date');
+  const regIn      = document.getElementById('dr-reg');
+  const scopeIn    = document.getElementById('dr-scope');
+  const summaryIn  = document.getElementById('dr-summary');
+  const outYaml    = document.getElementById('dr-output-yaml');
+  const outMd      = document.getElementById('dr-output-md');
+  const copyBtn    = document.getElementById('dr-copy');
+  const editAmend  = document.getElementById('dr-edit-amendments');
+  const editChap   = document.getElementById('dr-edit-chapter');
+  const tabs       = document.querySelectorAll('.dr-tab');
+
+  let currentChapterId = '';
+  let currentChapterPath = '';
+
+  function open(chapterId) {
+    currentChapterId = chapterId || '';
+    currentChapterPath = document.body.dataset.pageId === chapterId ? (document.body.dataset.pagePath || '') : '';
+    populateAffected(chapterId);
+    overlay.hidden = false;
+    document.body.style.overflow = 'hidden';
+    setTimeout(() => orderIn.focus(), 30);
+    render();
+  }
+  function close() {
+    overlay.hidden = true;
+    document.body.style.overflow = '';
+  }
+
+  function populateAffected(chapterId) {
+    affected.innerHTML = '';
+    if (!chapterId) {
+      affected.innerHTML = '<option value="">— не визначено —</option>';
+      return;
+    }
+    // Опція №1 — вся глава
+    const optAll = document.createElement('option');
+    optAll.value = chapterId;
+    optAll.textContent = `${chapterId}  (вся глава)`;
+    affected.appendChild(optAll);
+    // Опції — конкретні пункти на сторінці
+    document.querySelectorAll('.site-main a[id^="p"]').forEach(a => {
+      const anchor = a.id;
+      const opt = document.createElement('option');
+      opt.value = `${chapterId}.${anchor}`;
+      opt.textContent = `${chapterId}.${anchor}`;
+      affected.appendChild(opt);
+    });
+  }
+
+  function render() {
+    const affId = affected.value || currentChapterId || '[id]';
+    const op    = opSel.value || 'edit';
+    const order = orderIn.value || '???';
+    const date  = dateIn.value || 'YYYY-MM-DD';
+    const reg   = regIn.value || 'z????-??';
+    const scope = scopeIn.value.trim();
+    const summary = summaryIn.value.trim() || '[summary — заповнити]';
+
+    // YAML — додається в кінець meta/amendments.yaml у списку amendments
+    const yamlScope = scope ? `\n        scope: "${escapeQ(scope)}"` : '';
+    const yaml = `  - order: "${order}"
+    signed_at: ${date}
+    registration: ${reg}
+    summary: >-
+      ${summary.split('\n').join('\n      ')}
+    affects:
+      - id: ${affId}
+        op: ${op}${yamlScope}`;
+    outYaml.firstElementChild.textContent = yaml;
+
+    // Markdown — додається у frontmatter відповідної глави, секція amended_by
+    const mdScope = scope ? `, scope: "${escapeQ(scope)}"` : '';
+    const md = `# 1. У frontmatter глави — додай у amended_by:
+amended_by:
+  # ...
+  - { date: ${date}, order: ${reg}, op: ${op}${mdScope} }
+
+# 2. У тексті — після зачепленого пункту:
+> *{${describeChange(op, affId, reg, date)}}*`;
+    outMd.firstElementChild.textContent = md;
+
+    // GitHub edit URLs
+    editAmend.href = `https://github.com/workflowcat/nakaz-402/edit/main/meta/amendments.yaml`;
+    if (currentChapterPath) {
+      editChap.href = `https://github.com/workflowcat/nakaz-402/edit/main/${currentChapterPath}`;
+      editChap.textContent = 'Редагувати цю главу ↗';
+      editChap.hidden = false;
+    } else {
+      editChap.hidden = true;
+    }
+  }
+
+  function escapeQ(s) { return s.replace(/"/g, '\\"'); }
+
+  function describeChange(op, affId, reg, date) {
+    const parts = affId.split('.');
+    const last = parts[parts.length - 1];
+    const dateFmt = (date && /^\d{4}-\d{2}-\d{2}$/.test(date)) ? date.split('-').reverse().join('.') : date;
+    if (op === 'insert')    return `Доповнено ${affId} згідно з Наказом № NN від ${dateFmt} ([${reg}](https://zakon.rada.gov.ua/laws/show/${reg}))`;
+    if (op === 'redaction') return `${affId} — в редакції Наказу № NN від ${dateFmt} ([${reg}](https://zakon.rada.gov.ua/laws/show/${reg}))`;
+    if (op === 'repeal')    return `${affId} — виключено згідно з Наказом № NN від ${dateFmt} ([${reg}](https://zakon.rada.gov.ua/laws/show/${reg}))`;
+    return `${affId} — із змінами згідно з Наказом № NN від ${dateFmt} ([${reg}](https://zakon.rada.gov.ua/laws/show/${reg}))`;
+  }
+
+  // Event wiring
+  triggers.forEach(t => t.addEventListener('click', e => {
+    e.preventDefault();
+    open(t.dataset.chapterId || '');
+  }));
+  document.querySelectorAll('[data-draft-close]').forEach(el => el.addEventListener('click', close));
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && !overlay.hidden) close();
+  });
+
+  [opSel, orderIn, dateIn, regIn, scopeIn, summaryIn, affected].forEach(el => {
+    el && el.addEventListener('input', render);
+    el && el.addEventListener('change', render);
+  });
+
+  // Tabs
+  tabs.forEach(tab => tab.addEventListener('click', () => {
+    const which = tab.dataset.output;
+    tabs.forEach(t => t.classList.toggle('dr-tab-active', t === tab));
+    outYaml.hidden = which !== 'yaml';
+    outMd.hidden = which !== 'md';
+  }));
+
+  // Copy button
+  copyBtn.addEventListener('click', () => {
+    const which = document.querySelector('.dr-tab-active')?.dataset?.output || 'yaml';
+    const text = (which === 'yaml' ? outYaml : outMd).textContent;
+    navigator.clipboard?.writeText(text).then(() => {
+      const orig = copyBtn.textContent;
+      copyBtn.textContent = '✓ Скопійовано';
+      setTimeout(() => { copyBtn.textContent = orig; }, 1500);
+    }).catch(() => {
+      window.prompt('Копіюй вручну:', text);
+    });
+  });
+})();
+
+// =============================================================
 // Per-punkt copy-ID pill — біля кожного h2/h3 пункту
 // =============================================================
 (function() {
