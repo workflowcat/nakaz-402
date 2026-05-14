@@ -1,6 +1,7 @@
 ---
 import Layout from '../../layouts/Layout.astro';
 import { getCollection } from 'astro:content';
+import { buildPunktIdIndex, lintDraft, lintTerminology } from '../../lib/drafts';
 
 const drafts = await getCollection('drafts');
 const sorted = drafts.sort((a, b) => {
@@ -8,6 +9,42 @@ const sorted = drafts.sort((a, b) => {
   const db = String(b.data.proposed_at ?? '');
   return db.localeCompare(da);
 });
+
+// Aggregate dashboard stats.
+const knownIds = await buildPunktIdIndex();
+const lintByDraft = new Map<string, { errors: number; warnings: number }>();
+const targetHits = new Map<string, string[]>(); // target id → list of draft ids
+for (const d of drafts) {
+  const others = drafts.filter((x) => x.id !== d.id);
+  const findings = [
+    ...lintDraft(d as any, knownIds, others as any),
+    ...lintTerminology(d as any),
+  ];
+  lintByDraft.set(d.id, {
+    errors: findings.filter((f) => f.level === 'error').length,
+    warnings: findings.filter((f) => f.level === 'warning').length,
+  });
+  for (const op of (d.data.operations ?? []) as any[]) {
+    if (op.target) {
+      const arr = targetHits.get(op.target) ?? [];
+      arr.push(d.data.id);
+      targetHits.set(op.target, arr);
+    }
+  }
+}
+
+const statusCounts = drafts.reduce<Record<string, number>>((acc, d) => {
+  acc[d.data.status] = (acc[d.data.status] ?? 0) + 1;
+  return acc;
+}, {});
+
+const totalErrors = [...lintByDraft.values()].reduce((s, v) => s + v.errors, 0);
+const totalWarnings = [...lintByDraft.values()].reduce((s, v) => s + v.warnings, 0);
+const cleanCount = [...lintByDraft.values()].filter((v) => v.errors === 0 && v.warnings === 0).length;
+
+const hotspots = [...targetHits.entries()]
+  .filter(([, arr]) => arr.length > 1)
+  .sort((a, b) => b[1].length - a[1].length);
 
 function fmtDate(v: string | Date | undefined | null): string {
   if (!v) return '';
@@ -40,10 +77,73 @@ const STATUS_COLOR: Record<string, string> = {
   </div>
 
   <h1 class="text-3xl font-bold tracking-tight mb-3">Проєкти амендментів</h1>
-  <p class="text-ink-500 mb-8">
+  <p class="text-ink-500 mb-6">
     <strong>{drafts.length}</strong> {drafts.length === 1 ? 'проєкт' : drafts.length < 5 ? 'проєкти' : 'проєктів'} у системі.
     Подати свій → <a href="https://github.com/workflowcat/nakaz-402/tree/main/drafts" target="_blank" rel="noopener" class="text-accent-600 dark:text-accent-300 underline">drafts/ на GitHub</a>.
   </p>
+
+  <section class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-8">
+    <div class="bg-ink-50 dark:bg-ink-900 border-l-2 border-amber-500 px-4 py-3 rounded-r-md">
+      <div class="text-2xl font-bold tabular-nums">{statusCounts.draft ?? 0}</div>
+      <div class="text-[10px] uppercase tracking-wider text-ink-500 mt-1 font-medium">чернеток</div>
+    </div>
+    <div class="bg-ink-50 dark:bg-ink-900 border-l-2 border-blue-500 px-4 py-3 rounded-r-md">
+      <div class="text-2xl font-bold tabular-nums">{statusCounts.review ?? 0}</div>
+      <div class="text-[10px] uppercase tracking-wider text-ink-500 mt-1 font-medium">на огляді</div>
+    </div>
+    <div class="bg-ink-50 dark:bg-ink-900 border-l-2 border-emerald-500 px-4 py-3 rounded-r-md">
+      <div class="text-2xl font-bold tabular-nums">{statusCounts.adopted ?? 0}</div>
+      <div class="text-[10px] uppercase tracking-wider text-ink-500 mt-1 font-medium">прийнято</div>
+    </div>
+    <div class="bg-ink-50 dark:bg-ink-900 border-l-2 border-ink-400 px-4 py-3 rounded-r-md">
+      <div class="text-2xl font-bold tabular-nums">{statusCounts.rejected ?? 0}</div>
+      <div class="text-[10px] uppercase tracking-wider text-ink-500 mt-1 font-medium">відхилено</div>
+    </div>
+  </section>
+
+  <section class="mb-8 rounded-md border border-ink-200 dark:border-ink-800 overflow-hidden">
+    <header class="px-4 py-2 bg-ink-50 dark:bg-ink-900 border-b border-ink-200 dark:border-ink-800 text-sm font-medium">
+      Стан системи
+    </header>
+    <div class="grid sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-ink-200 dark:divide-ink-800">
+      <div class="px-4 py-3">
+        <div class="text-[10px] uppercase tracking-wider text-ink-500 mb-1 font-mono">Lint</div>
+        <div class="flex items-center gap-3 text-sm">
+          {totalErrors > 0 && <span class="text-red-600 dark:text-red-300 font-medium">{totalErrors} помилок</span>}
+          {totalWarnings > 0 && <span class="text-amber-600 dark:text-amber-300 font-medium">{totalWarnings} попереджень</span>}
+          {totalErrors === 0 && totalWarnings === 0 && <span class="text-emerald-600 dark:text-emerald-300 font-medium">все чисто</span>}
+        </div>
+        <div class="text-xs text-ink-500 mt-1">{cleanCount} з {drafts.length} чистих</div>
+      </div>
+      <div class="px-4 py-3">
+        <div class="text-[10px] uppercase tracking-wider text-ink-500 mb-1 font-mono">Hotspot-пункти</div>
+        <div class="text-sm font-medium">{hotspots.length}</div>
+        <div class="text-xs text-ink-500 mt-1">{hotspots.length === 0 ? 'жодний пункт не змагається' : 'мають 2+ конкуруючих драфти'}</div>
+      </div>
+      <div class="px-4 py-3">
+        <div class="text-[10px] uppercase tracking-wider text-ink-500 mb-1 font-mono">API</div>
+        <div class="text-sm">
+          <a href="/api/drafts.json" class="text-accent-600 dark:text-accent-300 hover:underline font-mono text-xs">/api/drafts.json</a>
+        </div>
+        <div class="text-xs text-ink-500 mt-1">JSON для зовнішніх інструментів</div>
+      </div>
+    </div>
+  </section>
+
+  {hotspots.length > 0 && (
+    <section class="mb-8">
+      <h2 class="text-sm uppercase tracking-wider font-mono font-semibold text-ink-500 mb-3">Hotspot-пункти</h2>
+      <ul class="space-y-2 text-sm">
+        {hotspots.map(([target, ids]: any) => (
+          <li class="rounded-md border border-amber-200 dark:border-amber-900/40 bg-amber-50/30 dark:bg-amber-900/10 px-4 py-2 flex items-baseline gap-3 flex-wrap">
+            <span class="text-[10px] font-mono uppercase tracking-wider px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300">{ids.length} драфти</span>
+            <code class="font-mono text-xs text-accent-700 dark:text-accent-300">{target}</code>
+            <span class="text-xs text-ink-500">→ {ids.join(', ')}</span>
+          </li>
+        ))}
+      </ul>
+    </section>
+  )}
 
   {sorted.length === 0 ? (
     <p class="text-ink-500 italic">Ще немає жодного проєкту.</p>
