@@ -21,7 +21,7 @@ permalink: /polozhennia/
 ### [Розділ I. Основи організації військово-лікарської експертизи](01-osnovy-organizatsii/)
 
 - Глава 1. [Загальні положення](01-osnovy-organizatsii/01-zagalni-polozhennia.md) ✅ повний текст
-- Глава 2. [Органи військово-лікарської експертизи](01-osnovy-organizatsii/02-organy-vle.md) 🟡 заглушка
+- Глава 2. [Органи військово-лікарської експертизи](01-osnovy-organizatsii/02-organy-vle.md) ✅ повний текст
 - Глава 3. [Порядок подання та розгляду звернень](01-osnovy-organizatsii/03-rozhliad-zvernen.md) 🟡 заглушка
 
 ### [Розділ II. Медичний огляд](02-medychnyi-oglyad/)
