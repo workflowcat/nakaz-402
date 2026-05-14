@@ -9,6 +9,9 @@ lint:  ## Прогнати лінтер frontmatter
 changelog:  ## Перегенерувати CHANGELOG.md з meta/amendments.yaml
 	@python3 scripts/changelog_from_amendments.py --write
 
+api:  ## Згенерувати статичний JSON API в api/
+	@python3 scripts/build_api.py
+
 check:  ## Перевірити, що CHANGELOG синхронізовано з amendments.yaml (для CI)
 	@python3 scripts/changelog_from_amendments.py --check
 

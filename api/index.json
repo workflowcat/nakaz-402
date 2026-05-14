@@ -1,0 +1,25 @@
+{
+  "schema_version": "1",
+  "generated_at": "2026-05-14T10:19:40.227429Z",
+  "name": "Наказ МОУ № 402 — JSON API",
+  "description": "Статичний JSON-API над репозиторієм. Кожен endpoint — звичайний .json файл, що віддається GitHub Pages.",
+  "endpoints": [
+    {
+      "path": "/api/amendments.json",
+      "description": "Повний журнал амендментів до наказу 402."
+    },
+    {
+      "path": "/api/dodatok-1/index.json",
+      "description": "Список статей Розкладу хвороб + словник категорій і граф."
+    },
+    {
+      "path": "/api/dodatok-1/stattia-{NNN}.json",
+      "description": "Окрема стаття Розкладу хвороб (NNN — номер з нулями: 001, 014, 042).",
+      "examples": [
+        "/api/dodatok-1/stattia-001.json",
+        "/api/dodatok-1/stattia-014.json",
+        "/api/dodatok-1/stattia-042.json"
+      ]
+    }
+  ]
+}
