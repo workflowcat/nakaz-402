@@ -209,16 +209,76 @@
 })();
 
 // =============================================================
-// Auto-link cross-references до пунктів (на цій же сторінці)
+// Auto-link cross-references — same-page + cross-page
 // =============================================================
 (function() {
+  const BASE = '{{ "/" | relative_url }}'.replace(/\/$/, '');
+
+  // ── Сайт-вайд ID → URL мапа (рендериться Liquid'ом) ──
+  const ID_URL = {
+    'nakaz': BASE + '/nakaz/',
+    'polozhennia.r1': BASE + '/polozhennia/01-osnovy-organizatsii/',
+    'polozhennia.r2': BASE + '/polozhennia/02-medychnyi-oglyad/',
+    'polozhennia.r1.gl1': BASE + '/polozhennia/01-osnovy-organizatsii/01-zagalni-polozhennia/',
+    'polozhennia.r1.gl2': BASE + '/polozhennia/01-osnovy-organizatsii/02-organy-vle/',
+    'polozhennia.r1.gl3': BASE + '/polozhennia/01-osnovy-organizatsii/03-rozhliad-zvernen/',
+    'polozhennia.r2.gl1': BASE + '/polozhennia/02-medychnyi-oglyad/01-zagalni-polozhennia/',
+    {%- for n in (2..23) -%}
+    'polozhennia.r2.gl{{ n }}': BASE + '/polozhennia/02-medychnyi-oglyad/{{ n | prepend: "00" | slice: -2, 2 }}-glava/',
+    {%- endfor %}
+    'dodatok.1': BASE + '/dodatky/01-rozklad-khvorob/',
+    'dodatok.2': BASE + '/dodatky/02-poyasnennia/',
+    'dodatok.3': BASE + '/dodatky/03-tdv/',
+    'dodatok.4': BASE + '/dodatky/04-dovidka-inozemets/',
+    'dodatok.5': BASE + '/dodatky/05-dovidka-travma/',
+  };
+
+  function romanToNum(s) {
+    const m = { I:1, V:5, X:10, L:50 };
+    let n = 0, prev = 0;
+    for (let i = s.length - 1; i >= 0; i--) {
+      const v = m[s[i]];
+      n += v < prev ? -v : v;
+      prev = v;
+    }
+    return n;
+  }
+
+  function urlFor(rozdilRoman, glavaNum, punktNum) {
+    if (!rozdilRoman) return null;
+    const rN = romanToNum(rozdilRoman);
+    if (!rN) return null;
+    let id = `polozhennia.r${rN}`;
+    if (glavaNum) id += `.gl${parseInt(glavaNum, 10)}`;
+    const base = ID_URL[id];
+    if (!base) return null;
+    return base + (punktNum ? `#p${punktNum}` : '');
+  }
+
+  function urlForDodatok(dodatokNum, statiaNum) {
+    const id = `dodatok.${parseInt(dodatokNum, 10)}`;
+    const base = ID_URL[id];
+    if (!base) return null;
+    return base + (statiaNum ? `#stattia-${statiaNum}` : '');
+  }
+
   function run() {
     const main = document.querySelector('.site-main');
     if (!main) return;
-    const knownAnchors = new Set();
-    main.querySelectorAll('a[id^="p"]').forEach(a => knownAnchors.add(a.id.slice(1)));
-    if (knownAnchors.size === 0) return;
-    const PUNKT_RE = /\b(пункт(?:ом|у|а|і|и|ів)?|п\.)\s*(\d+(?:\.\d+){0,2})/g;
+
+    // Same-page anchors (для одно-сторінкових xref як «пункт 1.4»)
+    const localAnchors = new Set();
+    main.querySelectorAll('a[id^="p"]').forEach(a => localAnchors.add(a.id.slice(1)));
+
+    // Regex'и — три рівні pattern matching:
+    // 1) Combo: [пункт N.M] [глави N] розділу X
+    // 2) Простий "розділу X" без префіксів
+    // 3) Додаток N (зі статтею або без)
+    // 4) Same-page "пункт N.M" (фолбек)
+    const COMBO_RE = /(?:пункт\p{L}{0,3}\s+(\d+(?:\.\d+){0,2})\s+)?(?:глав\p{L}{0,4}\s+(\d+)\s+)?розділ\p{L}{0,3}\s+(I{1,3}|IV|V|VI{0,3}|IX|X)\b/gu;
+    const DODATOK_RE = /(?:статт\p{L}{0,3}\s+(\d+)\s+)?(Д|д)одат\p{L}{0,4}\s+(\d+)/gu;
+    const SAMEPAGE_RE = /\b(пункт(?:ом|у|а|і|и|ів)?|п\.)\s*(\d+(?:\.\d+){0,2})/g;
+
     const SKIP = new Set(['A','ABBR','CODE','PRE','SCRIPT','STYLE','BUTTON','SUMMARY']);
     function inside(node) {
       let p = node.parentElement;
@@ -229,35 +289,64 @@
       }
       return false;
     }
+
+    function wrapMatches(text, matchers) {
+      // matchers: array of { re, getUrl, getLabel }
+      // Збираємо всі матчі з усіх regex, дедуплікуємо за позицією, сортуємо
+      const matches = [];
+      matchers.forEach(({ re, getUrl }) => {
+        re.lastIndex = 0;
+        let m;
+        while ((m = re.exec(text)) !== null) {
+          const url = getUrl(m);
+          if (!url) continue;
+          matches.push({ start: m.index, end: m.index + m[0].length, text: m[0], url });
+        }
+      });
+      if (!matches.length) return null;
+      matches.sort((a, b) => a.start - b.start);
+      // Видаляємо перекриття (беремо перший)
+      const filtered = [];
+      let lastEnd = 0;
+      for (const m of matches) {
+        if (m.start >= lastEnd) {
+          filtered.push(m);
+          lastEnd = m.end;
+        }
+      }
+      const frag = document.createDocumentFragment();
+      let cur = 0;
+      for (const m of filtered) {
+        if (m.start > cur) frag.appendChild(document.createTextNode(text.slice(cur, m.start)));
+        const a = document.createElement('a');
+        a.href = m.url;
+        a.className = 'xref';
+        a.textContent = m.text;
+        a.title = m.text;
+        frag.appendChild(a);
+        cur = m.end;
+      }
+      if (cur < text.length) frag.appendChild(document.createTextNode(text.slice(cur)));
+      return frag;
+    }
+
+    const matchers = [
+      { re: COMBO_RE,    getUrl: m => urlFor(m[3], m[2], m[1]) },
+      { re: DODATOK_RE,  getUrl: m => urlForDodatok(m[3], m[1]) },
+      { re: SAMEPAGE_RE, getUrl: m => localAnchors.has(m[2]) ? '#p' + m[2] : null },
+    ];
+
     const walker = document.createTreeWalker(main, NodeFilter.SHOW_TEXT);
     const nodes = [];
     let n;
     while ((n = walker.nextNode())) nodes.push(n);
+
     nodes.forEach(node => {
       if (inside(node)) return;
       const text = node.nodeValue;
       if (!text || text.length < 5) return;
-      PUNKT_RE.lastIndex = 0;
-      if (!PUNKT_RE.test(text)) return;
-      PUNKT_RE.lastIndex = 0;
-      const frag = document.createDocumentFragment();
-      let last = 0, m, replaced = false;
-      while ((m = PUNKT_RE.exec(text)) !== null) {
-        const punktNum = m[2];
-        if (!knownAnchors.has(punktNum)) continue;
-        if (m.index > last) frag.appendChild(document.createTextNode(text.slice(last, m.index)));
-        const a = document.createElement('a');
-        a.href = '#p' + punktNum;
-        a.className = 'xref';
-        a.title = 'Перейти до пункту ' + punktNum;
-        a.textContent = m[0];
-        frag.appendChild(a);
-        last = m.index + m[0].length;
-        replaced = true;
-      }
-      if (!replaced) return;
-      if (last < text.length) frag.appendChild(document.createTextNode(text.slice(last)));
-      node.parentNode.replaceChild(frag, node);
+      const frag = wrapMatches(text, matchers);
+      if (frag) node.parentNode.replaceChild(frag, node);
     });
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', run);
