@@ -28,6 +28,7 @@ mkdirSync(DEST, { recursive: true });
 const copies = [
   ['polozhennia', 'polozhennia'],
   ['dodatky', 'dodatky'],
+  ['drafts', 'drafts'],
   ['nakaz.md', 'nakaz/nakaz.md'],
   ['meta/amendments.yaml', '_data/amendments.yaml'],
   ['meta/glossary.md', '_data/glossary.md'],
