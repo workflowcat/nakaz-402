@@ -16,7 +16,8 @@ permalink: /
 {: .fs-6 .fw-300 }
 
 [Як це працює](docs/how-it-works.md){: .btn .btn-primary .fs-5 .mb-4 .mb-md-0 .mr-2 }
-[Тур по типовому амендменту](docs/walkthrough.md){: .btn .fs-5 .mb-4 .mb-md-0 .mr-2 }
+[Архітектура](docs/architecture.md){: .btn .fs-5 .mb-4 .mb-md-0 .mr-2 }
+[Тур по амендменту](docs/walkthrough.md){: .btn .fs-5 .mb-4 .mb-md-0 .mr-2 }
 [Офіційний текст ↗](https://zakon.rada.gov.ua/laws/show/z1109-08){: .btn .fs-5 .mb-4 .mb-md-0 }
 
 ---
@@ -72,9 +73,19 @@ permalink: /
 1. Парсить `meta/amendments.yaml` як YAML — отримує машино-читабельний
    журнал історії.
 2. Парсить `dodatky/01-rozklad-khvorob/stattia-*.yaml` як YAML — отримує
-   таблицю «діагноз → категорія придатності» для калькулятора.
+   таблицю «діагноз → категорія придатності» для калькулятора. Або просто
+   запускає готовий [`scripts/fitness_calculator.py`](scripts/fitness_calculator.py)
+   (CLI з `--json` режимом).
 3. Frontmatter сторінок `polozhennia/**/*.md` — теж YAML, можна вичитати
    через `python-frontmatter` / `gray-matter`.
+
+```bash
+# Демо: дізнатись категорію за статтею + підпунктом + графою
+$ python3 scripts/fitness_calculator.py --stattia 1 --punkt б --graf III
+Стаття 1: Туберкульоз органів дихання  [active]
+  Підпункт «б»: активний обмежений, із сповільненою динамікою...
+  Графа III (Військовослужбовці контрактної служби, офіцери): Б-4 — Придатний до служби з обмеженнями за видом
+```
 
 **Контрибутор** при виході нового наказу-зміни:
 

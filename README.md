@@ -119,26 +119,44 @@
 
 ## Що тут готового
 
-| Файл                                                     | Стан                          |
-| -------------------------------------------------------- | ----------------------------- |
-| `nakaz.md`                                               | повний дослівний текст наказу |
-| `polozhennia/01-osnovy-organizatsii/01-zagalni-...md`    | повний текст, із frontmatter  |
-| Інші файли `polozhennia/`                                | заглушки + frontmatter        |
-| `dodatky/01-rozklad-khvorob/`                            | заглушка + схема статті       |
-| `dodatky/02..05`                                         | заглушки + frontmatter        |
-| `meta/amendments.yaml`                                   | усі ~23 накази-зміни          |
-| `meta/glossary.md`, `meta/schema.md`                     | готові                        |
-| `CHANGELOG.md`                                           | людинописна версія amendments |
+### Контент
 
-**Дотягнути:**
+| Файл                                                          | Стан                         |
+| ------------------------------------------------------------- | ---------------------------- |
+| `nakaz.md`                                                    | ✅ повний текст наказу        |
+| `polozhennia/01-osnovy-organizatsii/01-zagalni-polozhennia.md` | ✅ повний текст з історією    |
+| `polozhennia/01-osnovy-organizatsii/02-organy-vle.md`         | ✅ повний текст пп. 2.1—2.10  |
+| `polozhennia/01-osnovy-organizatsii/03-rozhliad-zvernen.md`   | 🟡 заглушка                  |
+| `polozhennia/02-medychnyi-oglyad/...`                         | 🟡 заглушки                  |
+| `dodatky/01-rozklad-khvorob/stattia-001.yaml`                 | ✅ Туберкульоз (демо)         |
+| `dodatky/01-rozklad-khvorob/stattia-014.yaml`                 | ✅ Реактивні психози (демо)   |
+| `dodatky/01-rozklad-khvorob/stattia-042.yaml`                 | ✅ Артеріальна гіпертензія (демо) |
+| `dodatky/02..05`                                              | 🟡 заглушки + frontmatter    |
+| `meta/amendments.yaml`                                        | ✅ усі ~23 накази-зміни       |
+| `meta/glossary.md`, `meta/schema.md`                          | ✅ готові                     |
+| `CHANGELOG.md`                                                | ✅ генерується автоматично    |
 
-- решта пунктів Положення (велика робота — кожен абзац потребує звірки з офіційним
-  текстом і розставлення `amended_by` на основі приміток у фігурних дужках);
-- статті Розкладу хвороб з машино-читабельними категоріями придатності
-  (показовий зразок — `dodatky/01-rozklad-khvorob/stattia-001.yaml`);
-- лінтер frontmatter (валідатор `id`, обов'язкових полів, посилань);
-- GitHub Action: при PR — порівнює, чи кожна правка тексту супроводжується
-  записом у `amended_by`.
+### Інфраструктура
+
+| Що                                                           | Стан |
+| ------------------------------------------------------------ | ---- |
+| Сайт на GitHub Pages (Jekyll + just-the-docs)                | ✅   |
+| GitHub Action для авто-деплою на push у main                 | ✅   |
+| Лінтер frontmatter ([`scripts/lint_frontmatter.py`](scripts/lint_frontmatter.py))   | ✅   |
+| Генератор CHANGELOG з amendments.yaml                        | ✅   |
+| Калькулятор придатності ([`scripts/fitness_calculator.py`](scripts/fitness_calculator.py)) | ✅   |
+| Шаблони PR і Issue                                           | ✅   |
+| CONTRIBUTING.md                                              | ✅   |
+| Makefile (`make lint`, `make changelog`, `make serve`)       | ✅   |
+
+### Дотягнути
+
+- решта пунктів Положення (Розділ II і далі) — велика робота, кожен абзац
+  потребує звірки з офіційним джерелом і `amended_by` записів;
+- більше статей Розкладу хвороб — поточні 3 ілюстративні, треба ще ~80 чинних;
+- GitHub Action, що при PR перевіряє: для кожної правки тексту є запис в
+  `amended_by` (зараз перевіряємо тільки формальну структуру);
+- веб-калькулятор як окрема сторінка сайту (зараз — CLI).
 
 ---
 

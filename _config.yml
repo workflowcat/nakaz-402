@@ -26,6 +26,10 @@ heading_anchors: true
 back_to_top: true
 back_to_top_text: "Нагору"
 
+# Mermaid діаграми в архітектурній доці
+mermaid:
+  version: "10.6.1"
+
 # Меню зверху
 aux_links:
   "Офіційний текст (rada.gov.ua)":
