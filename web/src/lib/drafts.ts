@@ -89,3 +89,154 @@ export function diffBefore(parts: DiffPart[]): DiffPart[] {
 export function diffAfter(parts: DiffPart[]): DiffPart[] {
   return parts.filter((p) => p.kind !== 'del');
 }
+
+// ---- Linter ----
+
+export interface LintFinding {
+  level: 'error' | 'warning' | 'info';
+  op_index?: number;          // 0-based index into operations array
+  code: string;               // stable machine-readable code
+  message: string;            // human-readable Ukrainian text
+  related?: string[];         // related ids (e.g. conflicting draft ids)
+}
+
+export interface DraftOp {
+  op: 'redaction' | 'insert' | 'repeal' | 'restore';
+  target?: string;
+  after?: string;
+  before?: string;
+  new_id?: string;
+  new_text?: string;
+  text?: string;
+}
+
+/**
+ * Build a set of all existing pункт IDs across the whole order.
+ * Each glava entry has `data.id` like "polozhennia.r1.gl1" and body anchors
+ * like `<a id="p1.4">`. We compose to full ids like "polozhennia.r1.gl1.p1.4".
+ */
+export async function buildPunktIdIndex(): Promise<Set<string>> {
+  const entries = await getCollection('polozhennia');
+  const out = new Set<string>();
+  for (const e of entries) {
+    if (!e.data.id) continue;
+    out.add(e.data.id);
+    const body = e.body ?? '';
+    const re = /<a\s+id="(p[0-9.]+)"\s*><\/a>/g;
+    let m;
+    while ((m = re.exec(body))) {
+      out.add(`${e.data.id}.${m[1]}`);
+    }
+  }
+  return out;
+}
+
+/**
+ * Lint a single draft against the full set of known punkt IDs and other drafts.
+ * other_drafts should NOT include the draft being linted itself.
+ */
+export function lintDraft(
+  draft: { id: string; data: { id: string; operations?: DraftOp[]; status?: string } },
+  knownIds: Set<string>,
+  otherDrafts: Array<{ id: string; data: { id: string; operations?: DraftOp[]; status?: string } }>,
+): LintFinding[] {
+  const findings: LintFinding[] = [];
+  const ops = draft.data.operations ?? [];
+
+  // 1) Ref-exists: every `target`/`after`/`before` must resolve.
+  ops.forEach((op, i) => {
+    const refs: Array<[string, string]> = [];
+    if (op.target) refs.push(['target', op.target]);
+    if (op.after) refs.push(['after', op.after]);
+    if (op.before) refs.push(['before', op.before]);
+    for (const [field, id] of refs) {
+      if (!knownIds.has(id)) {
+        findings.push({
+          level: 'error',
+          op_index: i,
+          code: 'ref-not-found',
+          message: `Операція #${i + 1}: посилання \`${field}: ${id}\` не знайдено в чинній редакції.`,
+        });
+      }
+    }
+  });
+
+  // 2) New-id uniqueness: insert.new_id must not collide with existing anchors
+  //    or with any other draft's new_id.
+  const otherNewIds = new Map<string, string>(); // new_id → draft id
+  for (const d of otherDrafts) {
+    if (d.data.status === 'rejected') continue;
+    for (const o of d.data.operations ?? []) {
+      if (o.op === 'insert' && o.new_id) otherNewIds.set(o.new_id, d.data.id);
+    }
+  }
+  ops.forEach((op, i) => {
+    if (op.op === 'insert' && op.new_id) {
+      if (knownIds.has(op.new_id)) {
+        findings.push({
+          level: 'error',
+          op_index: i,
+          code: 'new-id-collision',
+          message: `Операція #${i + 1}: новий ID \`${op.new_id}\` уже існує в чинній редакції.`,
+        });
+      }
+      const other = otherNewIds.get(op.new_id);
+      if (other) {
+        findings.push({
+          level: 'error',
+          op_index: i,
+          code: 'new-id-collision-draft',
+          message: `Операція #${i + 1}: новий ID \`${op.new_id}\` уже зайнятий проєктом ${other}.`,
+          related: [other],
+        });
+      }
+    }
+  });
+
+  // 3) Conflict detection: another active draft targets the same pункт.
+  const targetsHere = new Set<string>();
+  ops.forEach((op) => { if (op.target) targetsHere.add(op.target); });
+  for (const d of otherDrafts) {
+    if (d.data.status === 'rejected') continue;
+    for (const o of d.data.operations ?? []) {
+      if (o.target && targetsHere.has(o.target)) {
+        findings.push({
+          level: 'warning',
+          code: 'conflict-with-draft',
+          message: `Проєкт ${d.data.id} також змінює \`${o.target}\` — узгодьте позиції перед адопцією.`,
+          related: [d.data.id, o.target],
+        });
+      }
+    }
+  }
+
+  // 4) Insert without an explicit anchor relative to existing content.
+  ops.forEach((op, i) => {
+    if (op.op === 'insert' && !op.after && !op.before) {
+      findings.push({
+        level: 'warning',
+        op_index: i,
+        code: 'insert-without-anchor',
+        message: `Операція #${i + 1}: вставка без \`after\` або \`before\` — порядок у документі буде невизначеним.`,
+      });
+    }
+    if (op.op === 'insert' && !op.new_id) {
+      findings.push({
+        level: 'warning',
+        op_index: i,
+        code: 'insert-without-new-id',
+        message: `Операція #${i + 1}: вставка без \`new_id\` — інші проєкти не зможуть на неї посилатися.`,
+      });
+    }
+    if (op.op === 'redaction' && !op.new_text) {
+      findings.push({
+        level: 'error',
+        op_index: i,
+        code: 'redaction-without-text',
+        message: `Операція #${i + 1}: \`redaction\` без \`new_text\` — нічого пропонувати замість.`,
+      });
+    }
+  });
+
+  return findings;
+}

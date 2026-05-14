@@ -1,7 +1,7 @@
 ---
 import Layout from '../../layouts/Layout.astro';
 import { getCollection, render } from 'astro:content';
-import { resolveTarget, wordDiff, diffBefore, diffAfter } from '../../lib/drafts';
+import { resolveTarget, wordDiff, diffBefore, diffAfter, buildPunktIdIndex, lintDraft } from '../../lib/drafts';
 
 export async function getStaticPaths() {
   const drafts = await getCollection('drafts');
@@ -25,6 +25,14 @@ const resolvedOps = await Promise.all(
     return { op, resolved };
   })
 );
+
+// Lint this draft against the canonical pункт index + all other drafts.
+const allDrafts = await getCollection('drafts');
+const otherDrafts = allDrafts.filter((d) => d.id !== entry.id);
+const knownIds = await buildPunktIdIndex();
+const findings = lintDraft(entry as any, knownIds, otherDrafts as any);
+const errorCount = findings.filter((f) => f.level === 'error').length;
+const warningCount = findings.filter((f) => f.level === 'warning').length;
 
 function strip(text: string): string {
   // Strip HTML anchor tags so the "before" snippet reads as plain text.
@@ -92,6 +100,39 @@ const OP_COLOR: Record<string, string> = {
   {entry.data.short_summary && (
     <p class="text-lg text-ink-500 leading-relaxed mb-6">{entry.data.short_summary}</p>
   )}
+
+  <section class="my-6 rounded-md border border-ink-200 dark:border-ink-800 overflow-hidden">
+    <header class="flex items-center justify-between gap-3 px-4 py-2 bg-ink-50 dark:bg-ink-900 border-b border-ink-200 dark:border-ink-800 flex-wrap">
+      <span class="text-sm font-medium">Лінтер</span>
+      <span class="flex items-center gap-2 text-xs font-mono">
+        {errorCount > 0 && <span class="px-2 py-0.5 rounded bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300">{errorCount} помилок</span>}
+        {warningCount > 0 && <span class="px-2 py-0.5 rounded bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300">{warningCount} попереджень</span>}
+        {errorCount === 0 && warningCount === 0 && <span class="px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300">✓ чисто</span>}
+      </span>
+    </header>
+    {findings.length === 0 ? (
+      <div class="px-4 py-3 text-sm text-ink-500">
+        Усі посилання резолвяться, новий ID унікальний, конфліктів з іншими проєктами не виявлено.
+      </div>
+    ) : (
+      <ul class="divide-y divide-ink-200 dark:divide-ink-800 text-sm">
+        {findings.map((f: any) => (
+          <li class="flex gap-3 px-4 py-2">
+            <span class:list={[
+              'text-[10px] font-mono uppercase tracking-wider px-1.5 py-0.5 rounded h-fit',
+              f.level === 'error' ? 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300' :
+              f.level === 'warning' ? 'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300' :
+              'bg-ink-100 text-ink-600 dark:bg-ink-800 dark:text-ink-400'
+            ]}>{f.level}</span>
+            <div class="flex-1">
+              <div>{f.message}</div>
+              <code class="text-xs text-ink-500 font-mono">{f.code}</code>
+            </div>
+          </li>
+        ))}
+      </ul>
+    )}
+  </section>
 
   <h2 class="text-xl font-bold mt-8 mb-3">Операції ({entry.data.operations?.length ?? 0})</h2>
   <ol class="space-y-4 mb-8">
