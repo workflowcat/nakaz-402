@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <title>Наказ № 402 · git-редакція</title>
+  <rect width="64" height="64" rx="14" fill="#7253ed"/>
+  <text x="32" y="44"
+        font-family="-apple-system, system-ui, 'Segoe UI', Inter, sans-serif"
+        font-size="28"
+        font-weight="700"
+        text-anchor="middle"
+        fill="#ffffff"
+        letter-spacing="-1">402</text>
+  <circle cx="52" cy="14" r="3.5" fill="#e07c3e">
+    <title>помаранчева крапка = свіжість (нещодавні амендменти)</title>
+  </circle>
+</svg>

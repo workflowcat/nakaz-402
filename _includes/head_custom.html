@@ -2,7 +2,12 @@
   Глобальні style-кастомізації:
   1. Кольорове кодування блок-цитат з маркерами амендментів за роком наказу.
   2. Стилі для відкритих/підсвічених посилань на rada.gov.ua.
+  3. Favicon.
 {% endcomment %}
+
+<link rel="icon" type="image/svg+xml" href="{{ '/favicon.svg' | relative_url }}">
+<link rel="mask-icon" href="{{ '/favicon.svg' | relative_url }}" color="#7253ed">
+<meta name="theme-color" content="#7253ed">
 
 <style>
   /* Маркер амендменту — блок-цитата з посиланням на zNNNN-YY */
