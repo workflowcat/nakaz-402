@@ -18,6 +18,8 @@ export const GET: APIRoute = async ({ site }) => {
       glossary: `${base}/api/glossary.json`,
       drafts: `${base}/api/drafts.json`,
       draft_by_slug: `${base}/api/drafts/{slug}.json`,
+      campaigns: `${base}/api/campaigns.json`,
+      campaign_by_slug: `${base}/api/campaigns/{slug}.json`,
       rh_meta: `${base}/api/rh/meta.json`,
       rh_list: `${base}/api/rh.json`,
       rh_by_stattia: `${base}/api/rh/{NNN}.json`,

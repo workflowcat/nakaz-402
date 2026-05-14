@@ -97,6 +97,21 @@ const TOOLS = [
     },
   },
   {
+    name: 'list_campaigns',
+    description: 'Перелік advocacy-кампаній (груп пов\'язаних драфтів зі спільною метою). Кожна — з member-draft count і lint-роллапом (помилки в самій кампанії + помилки в member-драфтах).',
+    inputSchema: { type: 'object', properties: {}, additionalProperties: false },
+  },
+  {
+    name: 'get_campaign',
+    description: 'Повна кампанія: мета, ключові меседжі, цілі лобіювання, member-драфти, наступні кроки, lint-findings і список пунктів Положення, які зачіпає кампанія сукупно.',
+    inputSchema: {
+      type: 'object',
+      properties: { slug: { type: 'string', description: 'Slug кампанії, напр. "2026-001-trembita-personal-data".' } },
+      required: ['slug'],
+      additionalProperties: false,
+    },
+  },
+  {
     name: 'list_rh',
     description: 'Перелік статей Розкладу хвороб (Додаток 1) — нозологічна назва, клас МКХ, кількість пунктів.',
     inputSchema: { type: 'object', properties: {}, additionalProperties: false },
@@ -173,6 +188,8 @@ async function callTool(name, args) {
       return list;
     }
     case 'get_draft':        return api(`/api/drafts/${args.slug}.json`);
+    case 'list_campaigns':   return api('/api/campaigns.json');
+    case 'get_campaign':     return api(`/api/campaigns/${args.slug}.json`);
     case 'list_rh':          return api('/api/rh.json');
     case 'get_rh_meta':      return api('/api/rh/meta.json');
     case 'get_rh_stattia': {
