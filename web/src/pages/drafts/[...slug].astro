@@ -67,16 +67,34 @@ const STATUS_COLOR: Record<string, string> = {
   rejected: 'bg-ink-200 text-ink-600 dark:bg-ink-800 dark:text-ink-400',
 };
 const OP_LABEL: Record<string, string> = {
-  redaction: 'Викласти в редакції',
-  insert: 'Доповнити',
+  redaction: 'Викласти в новій редакції',
+  insert: 'Доповнити новим пунктом',
   repeal: 'Виключити',
   restore: 'Поновити',
+};
+const OP_BADGE: Record<string, string> = {
+  redaction: 'редакція',
+  insert: 'вставка',
+  repeal: 'виключення',
+  restore: 'поновлення',
 };
 const OP_COLOR: Record<string, string> = {
   redaction: 'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300',
   insert: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300',
   repeal: 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300',
   restore: 'bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300',
+};
+
+// Human-readable explanation for each lint code (shown under the message).
+const LINT_HINT: Record<string, string> = {
+  'ref-not-found': 'Перевірте номер пункту — можливо, помилка в YAML або пункт ще не написаний.',
+  'new-id-collision': 'Цей ID уже існує в чинній редакції. Виберіть інший номер для нового пункту.',
+  'new-id-collision-draft': 'Інший проєкт уже резервує цей номер. Узгодьте нумерацію з його автором.',
+  'conflict-with-draft': 'Це попередження, не помилка. Просто означає, що перед прийняттям одного — треба буде узгодити з іншим.',
+  'insert-without-anchor': 'Без «after» чи «before» незрозуміло, куди саме в текст вставляти новий пункт.',
+  'insert-without-new-id': 'Без new_id інші проєкти не зможуть посилатися на ваш новий пункт.',
+  'redaction-without-text': '«Викласти в редакції» вимагає поля new_text — без нього нема чим заміняти.',
+  'terminology-drift': 'Сайт автоматично відстежує перейменування у попередніх амендментах.',
 };
 ---
 <Layout
@@ -85,7 +103,8 @@ const OP_COLOR: Record<string, string> = {
   flavor="content"
 >
   <div class="mb-4 px-3 py-2 rounded-md bg-amber-50 dark:bg-amber-900/20 border-l-2 border-amber-500 text-xs text-amber-800 dark:text-amber-200">
-    <strong>Не є офіційним проєктом НПА.</strong> Це машино-читабельний ескіз.
+    <strong>Не має юридичної сили.</strong> Це робоча чернетка правки до Положення —
+    публікується для обговорення і перевірки перед поданням до Мін'юсту.
   </div>
 
   <nav class="text-sm text-ink-500 mb-4">
@@ -108,30 +127,37 @@ const OP_COLOR: Record<string, string> = {
 
   <section class="my-6 rounded-md border border-ink-200 dark:border-ink-800 overflow-hidden">
     <header class="flex items-center justify-between gap-3 px-4 py-2 bg-ink-50 dark:bg-ink-900 border-b border-ink-200 dark:border-ink-800 flex-wrap">
-      <span class="text-sm font-medium">Лінтер</span>
-      <span class="flex items-center gap-2 text-xs font-mono">
-        {errorCount > 0 && <span class="px-2 py-0.5 rounded bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300">{errorCount} помилок</span>}
-        {warningCount > 0 && <span class="px-2 py-0.5 rounded bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300">{warningCount} попереджень</span>}
-        {errorCount === 0 && warningCount === 0 && <span class="px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300">✓ чисто</span>}
+      <div>
+        <div class="text-sm font-medium">Автоперевірки</div>
+        <div class="text-xs text-ink-500">Запускаються при кожному оновленні. Помилки = блокують прийняття; попередження = вимагають обговорення.</div>
+      </div>
+      <span class="flex items-center gap-2 text-xs">
+        {errorCount > 0 && <span class="px-2 py-0.5 rounded bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300 font-medium">{errorCount} помилок</span>}
+        {warningCount > 0 && <span class="px-2 py-0.5 rounded bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300 font-medium">{warningCount} попереджень</span>}
+        {errorCount === 0 && warningCount === 0 && <span class="px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300 font-medium">✓ без зауважень</span>}
       </span>
     </header>
     {findings.length === 0 ? (
       <div class="px-4 py-3 text-sm text-ink-500">
-        Усі посилання резолвяться, новий ID унікальний, конфліктів з іншими проєктами не виявлено.
+        Усі посилання на пункти існують, нумерація унікальна, конфліктів
+        із іншими проєктами не виявлено, термінологія сучасна. Можна
+        давати на огляд.
       </div>
     ) : (
       <ul class="divide-y divide-ink-200 dark:divide-ink-800 text-sm">
         {findings.map((f: any) => (
           <li class="flex gap-3 px-4 py-2">
             <span class:list={[
-              'text-[10px] font-mono uppercase tracking-wider px-1.5 py-0.5 rounded h-fit',
+              'text-[10px] font-medium uppercase tracking-wider px-1.5 py-0.5 rounded h-fit',
               f.level === 'error' ? 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300' :
               f.level === 'warning' ? 'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300' :
               'bg-ink-100 text-ink-600 dark:bg-ink-800 dark:text-ink-400'
-            ]}>{f.level}</span>
+            ]}>{f.level === 'error' ? 'помилка' : f.level === 'warning' ? 'попередження' : 'info'}</span>
             <div class="flex-1">
               <div>{f.message}</div>
-              <code class="text-xs text-ink-500 font-mono">{f.code}</code>
+              {LINT_HINT[f.code] && (
+                <div class="text-xs text-ink-500 mt-0.5">{LINT_HINT[f.code]}</div>
+              )}
             </div>
           </li>
         ))}
@@ -151,8 +177,8 @@ const OP_COLOR: Record<string, string> = {
       return (
         <li class="rounded-md border border-ink-200 dark:border-ink-800 overflow-hidden">
           <div class="flex items-baseline gap-3 px-4 py-2 bg-ink-50 dark:bg-ink-900 border-b border-ink-200 dark:border-ink-800 flex-wrap">
-            <span class="font-mono text-xs text-ink-500">#{i + 1}</span>
-            <span class:list={['text-[10px] font-mono uppercase tracking-wider px-1.5 py-0.5 rounded', OP_COLOR[op.op]]}>{op.op}</span>
+            <span class="font-mono text-xs text-ink-500">№{i + 1}</span>
+            <span class:list={['text-[10px] font-medium uppercase tracking-wider px-1.5 py-0.5 rounded', OP_COLOR[op.op]]}>{OP_BADGE[op.op] ?? op.op}</span>
             <span class="text-sm">{OP_LABEL[op.op] ?? op.op}</span>
             {op.target && (
               targetHref
@@ -163,7 +189,7 @@ const OP_COLOR: Record<string, string> = {
             {op.before && <span class="font-mono text-xs text-ink-500">перед <a href={targetHref ?? '#'} class="text-accent-600 dark:text-accent-300 hover:underline">{op.before}</a></span>}
             {op.new_id && <span class="font-mono text-xs text-accent-600 dark:text-accent-300">→ {op.new_id}</span>}
             {!isResolved && (op.target || op.after || op.before) && (
-              <span class="text-[10px] font-mono uppercase tracking-wider px-1.5 py-0.5 rounded bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300 ml-auto">не знайдено</span>
+              <span class="text-[10px] font-medium uppercase tracking-wider px-1.5 py-0.5 rounded bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300 ml-auto" title="Такого пункту немає в чинній редакції Положення">пункт не існує</span>
             )}
           </div>
           {op.rationale && (
@@ -179,7 +205,7 @@ const OP_COLOR: Record<string, string> = {
             return (
               <div class="grid sm:grid-cols-2 gap-px bg-ink-200 dark:bg-ink-800">
                 <div class="bg-white dark:bg-ink-950">
-                  <div class="px-4 py-1 text-[10px] font-mono uppercase tracking-wider text-ink-500 bg-ink-50 dark:bg-ink-900 border-b border-ink-200 dark:border-ink-800">До</div>
+                  <div class="px-4 py-1 text-[10px] font-medium uppercase tracking-wider text-ink-500 bg-ink-50 dark:bg-ink-900 border-b border-ink-200 dark:border-ink-800">Чинна редакція</div>
                   <div class="px-4 py-3 text-sm whitespace-pre-wrap font-sans">
                     {bp.map((p: any) => (
                       p.kind === 'del'
@@ -189,7 +215,7 @@ const OP_COLOR: Record<string, string> = {
                   </div>
                 </div>
                 <div class="bg-white dark:bg-ink-950">
-                  <div class="px-4 py-1 text-[10px] font-mono uppercase tracking-wider text-ink-500 bg-ink-50 dark:bg-ink-900 border-b border-ink-200 dark:border-ink-800">Після</div>
+                  <div class="px-4 py-1 text-[10px] font-medium uppercase tracking-wider text-ink-500 bg-ink-50 dark:bg-ink-900 border-b border-ink-200 dark:border-ink-800">Пропонована редакція</div>
                   <div class="px-4 py-3 text-sm whitespace-pre-wrap font-sans">
                     {ap.map((p: any) => (
                       p.kind === 'add'
@@ -208,11 +234,11 @@ const OP_COLOR: Record<string, string> = {
 
           {(op.op === 'insert' && afterText) && (
             <div class="bg-white dark:bg-ink-950">
-              <div class="px-4 py-1 text-[10px] font-mono uppercase tracking-wider text-ink-500 bg-ink-50 dark:bg-ink-900 border-b border-ink-200 dark:border-ink-800">Новий текст</div>
+              <div class="px-4 py-1 text-[10px] font-medium uppercase tracking-wider text-ink-500 bg-ink-50 dark:bg-ink-900 border-b border-ink-200 dark:border-ink-800">Новий пункт</div>
               <div class="px-4 py-3 text-sm whitespace-pre-wrap font-sans bg-emerald-50/40 dark:bg-emerald-900/10">{afterText}</div>
               {beforeText && (
                 <details class="border-t border-ink-200 dark:border-ink-800">
-                  <summary class="cursor-pointer px-4 py-2 text-xs text-ink-500 hover:text-ink-700 dark:hover:text-ink-300">Контекст: пункт, після якого додаємо</summary>
+                  <summary class="cursor-pointer px-4 py-2 text-xs text-ink-500 hover:text-ink-700 dark:hover:text-ink-300">Показати сусідній пункт, поряд з яким стане новий</summary>
                   <div class="px-4 pb-3 text-sm whitespace-pre-wrap font-sans text-ink-600 dark:text-ink-400">{beforeText}</div>
                 </details>
               )}
@@ -221,14 +247,14 @@ const OP_COLOR: Record<string, string> = {
 
           {(op.op === 'repeal' && beforeText) && (
             <div class="bg-white dark:bg-ink-950">
-              <div class="px-4 py-1 text-[10px] font-mono uppercase tracking-wider text-ink-500 bg-ink-50 dark:bg-ink-900 border-b border-ink-200 dark:border-ink-800">Виключається</div>
+              <div class="px-4 py-1 text-[10px] font-medium uppercase tracking-wider text-ink-500 bg-ink-50 dark:bg-ink-900 border-b border-ink-200 dark:border-ink-800">Що буде виключено</div>
               <div class="px-4 py-3 text-sm whitespace-pre-wrap font-sans bg-red-50/40 dark:bg-red-900/10 line-through decoration-red-400/60 text-ink-500">{beforeText}</div>
             </div>
           )}
 
           {(op.op === 'restore' && afterText) && (
             <div class="bg-white dark:bg-ink-950">
-              <div class="px-4 py-1 text-[10px] font-mono uppercase tracking-wider text-ink-500 bg-ink-50 dark:bg-ink-900 border-b border-ink-200 dark:border-ink-800">Поновлюється</div>
+              <div class="px-4 py-1 text-[10px] font-medium uppercase tracking-wider text-ink-500 bg-ink-50 dark:bg-ink-900 border-b border-ink-200 dark:border-ink-800">Що буде поновлено</div>
               <div class="px-4 py-3 text-sm whitespace-pre-wrap font-sans bg-blue-50/40 dark:bg-blue-900/10">{afterText}</div>
             </div>
           )}
@@ -240,13 +266,17 @@ const OP_COLOR: Record<string, string> = {
   {citation && (
     <section class="my-8 rounded-md border border-ink-200 dark:border-ink-800 overflow-hidden">
       <header class="flex items-center justify-between gap-3 px-4 py-2 bg-ink-50 dark:bg-ink-900 border-b border-ink-200 dark:border-ink-800 flex-wrap">
-        <span class="text-sm font-medium">Формальний текст наказу-амендменту</span>
+        <div>
+          <div class="text-sm font-medium">Готовий текст для офіційного наказу</div>
+          <div class="text-xs text-ink-500">Згенеровано автоматично з операцій вище — у стилі справжніх амендментів МОУ.</div>
+        </div>
         <button id="copy-citation" type="button" class="text-xs px-2 py-1 rounded border border-ink-200 dark:border-ink-700 hover:border-accent-500 hover:text-accent-600">📋 Копіювати</button>
       </header>
       <pre id="citation-text" class="px-4 py-4 text-sm whitespace-pre-wrap font-sans bg-white dark:bg-ink-950 leading-relaxed">{citation}</pre>
       <footer class="px-4 py-2 text-xs text-ink-500 border-t border-ink-200 dark:border-ink-800 italic">
-        Авто-згенеровано з YAML-операцій. Підставити в проєкт реального наказу — і
-        перевірити з юристом перед поданням до Мін'юсту.
+        Використовуйте як стартову точку: вставте в проєкт наказу-амендменту,
+        вичитайте з юристом, далі — звичайна процедура узгодження і подання
+        до Мін'юсту.
       </footer>
     </section>
     <script is:inline>

@@ -95,15 +95,17 @@ const jsonLd = {
 
   {affectingDrafts.length > 0 && (
     <div class="mb-6 px-4 py-3 rounded-md bg-accent-50 dark:bg-accent-900/20 border-l-2 border-accent-500 text-sm">
-      <div class="font-medium text-accent-700 dark:text-accent-300 mb-2">
-        🔄 {affectingDrafts.length} {affectingDrafts.length === 1 ? 'проєкт амендменту зачіпає' : affectingDrafts.length < 5 ? 'проєкти амендментів зачіпають' : 'проєктів амендментів зачіпають'} цю главу
+      <div class="font-medium text-accent-700 dark:text-accent-300 mb-1">
+        🔄 {affectingDrafts.length === 1 ? 'Готується правка до цієї глави' : `Готується ${affectingDrafts.length} ${affectingDrafts.length < 5 ? 'правки' : 'правок'} до цієї глави`}
+      </div>
+      <div class="text-xs text-ink-500 mb-2">
+        Це робочі проєкти, ще не прийняті — натисніть, щоб побачити «до / після» і поточний стан обговорення.
       </div>
       <ul class="space-y-1">
         {affectingDrafts.map((d: any) => (
           <li class="flex items-baseline gap-2 flex-wrap">
-            <span class:list={['text-[10px] font-mono uppercase tracking-wider px-1.5 py-0.5 rounded', STATUS_COLOR_DRAFT[d.data.status] ?? STATUS_COLOR_DRAFT.draft]}>{STATUS_LABEL_DRAFT[d.data.status] ?? d.data.status}</span>
+            <span class:list={['text-[10px] font-medium uppercase tracking-wider px-1.5 py-0.5 rounded', STATUS_COLOR_DRAFT[d.data.status] ?? STATUS_COLOR_DRAFT.draft]}>{STATUS_LABEL_DRAFT[d.data.status] ?? d.data.status}</span>
             <a href={`/drafts/${d.id.replace(/\.md$/, '')}/`} class="text-accent-700 dark:text-accent-300 hover:underline">{d.data.title}</a>
-            <span class="text-xs text-ink-500 font-mono">{d.data.id}</span>
           </li>
         ))}
       </ul>
