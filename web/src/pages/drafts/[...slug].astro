@@ -1,6 +1,7 @@
 ---
 import Layout from '../../layouts/Layout.astro';
 import { getCollection, render } from 'astro:content';
+import { resolveTarget } from '../../lib/drafts';
 
 export async function getStaticPaths() {
   const drafts = await getCollection('drafts');
@@ -15,6 +16,30 @@ export async function getStaticPaths() {
 const { entry } = Astro.props;
 const { Content } = await render(entry);
 const githubEditUrl = `https://github.com/workflowcat/nakaz-402/edit/main/drafts/${entry.id}`;
+
+// Resolve every operation's target so we can show a before/after preview.
+const resolvedOps = await Promise.all(
+  (entry.data.operations ?? []).map(async (op: any) => {
+    const refId = op.target ?? op.after ?? op.before ?? null;
+    const resolved = refId ? await resolveTarget(refId) : null;
+    return { op, resolved };
+  })
+);
+
+function strip(text: string): string {
+  // Strip HTML anchor tags so the "before" snippet reads as plain text.
+  return text
+    .replace(/<a\s+id="[^"]*"\s*><\/a>/g, '')
+    .replace(/^\s*\n/, '')
+    .trim();
+}
+
+function fmtDate(v: string | Date | undefined | null): string {
+  if (!v) return '';
+  if (v instanceof Date) return v.toISOString().slice(0, 10);
+  const m = String(v).match(/\d{4}-\d{2}-\d{2}/);
+  return m ? m[0] : String(v).slice(0, 10);
+}
 
 const STATUS_LABEL: Record<string, string> = {
   draft: 'чернетка',
@@ -59,7 +84,7 @@ const OP_COLOR: Record<string, string> = {
   <div class="flex items-baseline gap-3 mb-2 flex-wrap">
     <span class:list={['text-[10px] font-mono uppercase tracking-wider px-1.5 py-0.5 rounded', STATUS_COLOR[entry.data.status] ?? STATUS_COLOR.draft]}>{STATUS_LABEL[entry.data.status] ?? entry.data.status}</span>
     {entry.data.proposed_by && <span class="text-xs text-ink-500 font-mono">👤 {entry.data.proposed_by}</span>}
-    {entry.data.proposed_at && <span class="text-xs text-ink-500 font-mono">📅 {String(entry.data.proposed_at).slice(0, 10)}</span>}
+    {entry.data.proposed_at && <span class="text-xs text-ink-500 font-mono">📅 {fmtDate(entry.data.proposed_at)}</span>}
   </div>
 
   <h1 class="text-3xl font-bold tracking-tight mb-3">{entry.data.title}</h1>
@@ -70,27 +95,83 @@ const OP_COLOR: Record<string, string> = {
 
   <h2 class="text-xl font-bold mt-8 mb-3">Операції ({entry.data.operations?.length ?? 0})</h2>
   <ol class="space-y-4 mb-8">
-    {(entry.data.operations ?? []).map((op: any, i: number) => (
-      <li class="rounded-md border border-ink-200 dark:border-ink-800 overflow-hidden">
-        <div class="flex items-baseline gap-3 px-4 py-2 bg-ink-50 dark:bg-ink-900 border-b border-ink-200 dark:border-ink-800 flex-wrap">
-          <span class="font-mono text-xs text-ink-500">#{i + 1}</span>
-          <span class:list={['text-[10px] font-mono uppercase tracking-wider px-1.5 py-0.5 rounded', OP_COLOR[op.op]]}>{op.op}</span>
-          <span class="text-sm">{OP_LABEL[op.op] ?? op.op}</span>
-          {op.target && <span class="font-mono text-xs text-accent-600 dark:text-accent-300">{op.target}</span>}
-          {op.after && <span class="font-mono text-xs text-ink-500">після {op.after}</span>}
-          {op.before && <span class="font-mono text-xs text-ink-500">перед {op.before}</span>}
-          {op.new_id && <span class="font-mono text-xs text-accent-600 dark:text-accent-300">→ {op.new_id}</span>}
-        </div>
-        {op.rationale && (
-          <div class="px-4 py-2 text-sm text-ink-600 dark:text-ink-400 border-b border-ink-200 dark:border-ink-800 italic">
-            {op.rationale}
+    {resolvedOps.map(({ op, resolved }: any, i: number) => {
+      const isResolved = !!resolved;
+      const targetHref = resolved
+        ? `/polozhennia/${resolved.slug}/${resolved.anchor ? `#${resolved.anchor}` : ''}`
+        : null;
+      const beforeText = resolved?.beforeText ? strip(resolved.beforeText) : null;
+      const afterText = op.new_text || op.text || null;
+      return (
+        <li class="rounded-md border border-ink-200 dark:border-ink-800 overflow-hidden">
+          <div class="flex items-baseline gap-3 px-4 py-2 bg-ink-50 dark:bg-ink-900 border-b border-ink-200 dark:border-ink-800 flex-wrap">
+            <span class="font-mono text-xs text-ink-500">#{i + 1}</span>
+            <span class:list={['text-[10px] font-mono uppercase tracking-wider px-1.5 py-0.5 rounded', OP_COLOR[op.op]]}>{op.op}</span>
+            <span class="text-sm">{OP_LABEL[op.op] ?? op.op}</span>
+            {op.target && (
+              targetHref
+                ? <a href={targetHref} class="font-mono text-xs text-accent-600 dark:text-accent-300 hover:underline">{op.target}</a>
+                : <span class="font-mono text-xs text-red-600">{op.target} (не знайдено)</span>
+            )}
+            {op.after && <span class="font-mono text-xs text-ink-500">після <a href={targetHref ?? '#'} class="text-accent-600 dark:text-accent-300 hover:underline">{op.after}</a></span>}
+            {op.before && <span class="font-mono text-xs text-ink-500">перед <a href={targetHref ?? '#'} class="text-accent-600 dark:text-accent-300 hover:underline">{op.before}</a></span>}
+            {op.new_id && <span class="font-mono text-xs text-accent-600 dark:text-accent-300">→ {op.new_id}</span>}
+            {!isResolved && (op.target || op.after || op.before) && (
+              <span class="text-[10px] font-mono uppercase tracking-wider px-1.5 py-0.5 rounded bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300 ml-auto">не знайдено</span>
+            )}
           </div>
-        )}
-        {(op.new_text || op.text) && (
-          <pre class="px-4 py-3 text-sm whitespace-pre-wrap font-sans bg-white dark:bg-ink-950">{op.new_text || op.text}</pre>
-        )}
-      </li>
-    ))}
+          {op.rationale && (
+            <div class="px-4 py-2 text-sm text-ink-600 dark:text-ink-400 border-b border-ink-200 dark:border-ink-800 italic">
+              {op.rationale}
+            </div>
+          )}
+
+          {(op.op === 'redaction' && beforeText && afterText) && (
+            <div class="grid sm:grid-cols-2 gap-px bg-ink-200 dark:bg-ink-800">
+              <div class="bg-white dark:bg-ink-950">
+                <div class="px-4 py-1 text-[10px] font-mono uppercase tracking-wider text-ink-500 bg-ink-50 dark:bg-ink-900 border-b border-ink-200 dark:border-ink-800">До</div>
+                <div class="px-4 py-3 text-sm whitespace-pre-wrap font-sans bg-red-50/40 dark:bg-red-900/10 text-ink-700 dark:text-ink-300 line-through decoration-red-400/60 decoration-1">{beforeText}</div>
+              </div>
+              <div class="bg-white dark:bg-ink-950">
+                <div class="px-4 py-1 text-[10px] font-mono uppercase tracking-wider text-ink-500 bg-ink-50 dark:bg-ink-900 border-b border-ink-200 dark:border-ink-800">Після</div>
+                <div class="px-4 py-3 text-sm whitespace-pre-wrap font-sans bg-emerald-50/40 dark:bg-emerald-900/10">{afterText}</div>
+              </div>
+            </div>
+          )}
+
+          {op.op === 'redaction' && beforeText && !afterText && (
+            <pre class="px-4 py-3 text-sm whitespace-pre-wrap font-sans bg-white dark:bg-ink-950">{beforeText}</pre>
+          )}
+
+          {(op.op === 'insert' && afterText) && (
+            <div class="bg-white dark:bg-ink-950">
+              <div class="px-4 py-1 text-[10px] font-mono uppercase tracking-wider text-ink-500 bg-ink-50 dark:bg-ink-900 border-b border-ink-200 dark:border-ink-800">Новий текст</div>
+              <div class="px-4 py-3 text-sm whitespace-pre-wrap font-sans bg-emerald-50/40 dark:bg-emerald-900/10">{afterText}</div>
+              {beforeText && (
+                <details class="border-t border-ink-200 dark:border-ink-800">
+                  <summary class="cursor-pointer px-4 py-2 text-xs text-ink-500 hover:text-ink-700 dark:hover:text-ink-300">Контекст: пункт, після якого додаємо</summary>
+                  <div class="px-4 pb-3 text-sm whitespace-pre-wrap font-sans text-ink-600 dark:text-ink-400">{beforeText}</div>
+                </details>
+              )}
+            </div>
+          )}
+
+          {(op.op === 'repeal' && beforeText) && (
+            <div class="bg-white dark:bg-ink-950">
+              <div class="px-4 py-1 text-[10px] font-mono uppercase tracking-wider text-ink-500 bg-ink-50 dark:bg-ink-900 border-b border-ink-200 dark:border-ink-800">Виключається</div>
+              <div class="px-4 py-3 text-sm whitespace-pre-wrap font-sans bg-red-50/40 dark:bg-red-900/10 line-through decoration-red-400/60 text-ink-500">{beforeText}</div>
+            </div>
+          )}
+
+          {(op.op === 'restore' && afterText) && (
+            <div class="bg-white dark:bg-ink-950">
+              <div class="px-4 py-1 text-[10px] font-mono uppercase tracking-wider text-ink-500 bg-ink-50 dark:bg-ink-900 border-b border-ink-200 dark:border-ink-800">Поновлюється</div>
+              <div class="px-4 py-3 text-sm whitespace-pre-wrap font-sans bg-blue-50/40 dark:bg-blue-900/10">{afterText}</div>
+            </div>
+          )}
+        </li>
+      );
+    })}
   </ol>
 
   {entry.body && entry.body.trim().length > 0 && (
