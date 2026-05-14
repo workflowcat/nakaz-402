@@ -1,0 +1,111 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import { getCollection } from 'astro:content';
+import { getKlasy, getGrafy, categoryColor, categoryDescription } from '../../lib/rh';
+
+export async function getStaticPaths() {
+  const stattii = await getCollection('rh');
+  return stattii.map((s) => ({
+    params: { stattia: String(s.data.stattia).padStart(3, '0') },
+    props: { entry: s },
+  }));
+}
+
+const { entry } = Astro.props;
+const klasy = getKlasy();
+const grafy = getGrafy();
+const klas = klasy.find((k) => k.id === entry.data.klas);
+
+function fmtDate(v: string | Date | undefined | null): string {
+  if (!v) return '';
+  if (v instanceof Date) return v.toISOString().slice(0, 10);
+  const m = String(v).match(/\d{4}-\d{2}-\d{2}/);
+  return m ? m[0] : String(v).slice(0, 10);
+}
+---
+<Layout
+  title={`Стаття ${entry.data.stattia}. ${entry.data.nazva}`}
+  description={`${entry.data.nazva} — категорії придатності за Розкладом хвороб (Додаток 1 до Наказу МОУ № 402)`}
+  flavor="content"
+>
+  <div class="mb-4 px-3 py-2 rounded-md bg-amber-50 dark:bg-amber-900/20 border-l-2 border-amber-500 text-xs text-amber-800 dark:text-amber-200">
+    <strong>Демо-стаття.</strong> Значення категорій ілюстративні. Перед використанням — звірте з <a href={entry.data.source ?? 'https://zakon.rada.gov.ua/laws/show/z1109-08'} class="underline" target="_blank" rel="noopener">офіційним текстом</a>.
+  </div>
+
+  <nav class="text-sm text-ink-500 mb-4">
+    <a href="/rh/" class="hover:text-accent-500">Розклад хвороб</a>
+    <span class="mx-2 opacity-50">›</span>
+    <span>Стаття {entry.data.stattia}</span>
+  </nav>
+
+  <div class="flex items-baseline gap-3 mb-2 flex-wrap">
+    <span class="font-mono text-xs text-accent-600 dark:text-accent-300">Стаття {entry.data.stattia}</span>
+    {klas && <span class="text-xs text-ink-500">· {klas.nazva}</span>}
+    {entry.data.last_amended && (
+      <span class="text-xs text-ink-500 font-mono ml-auto">
+        Остання правка: {fmtDate(entry.data.last_amended.date)} · наказ {entry.data.last_amended.order}
+      </span>
+    )}
+  </div>
+
+  <h1 class="text-3xl font-bold tracking-tight mb-6">{entry.data.nazva}</h1>
+
+  <div class="overflow-x-auto -mx-5 px-5">
+    <table class="w-full border-collapse text-sm">
+      <thead>
+        <tr class="border-b-2 border-ink-300 dark:border-ink-700">
+          <th class="text-left py-2 pr-3 align-bottom font-medium text-ink-500 min-w-[3rem]">Пункт</th>
+          <th class="text-left py-2 pr-3 align-bottom font-medium text-ink-500">Опис</th>
+          {grafy.map((g) => (
+            <th class="text-center py-2 px-2 align-bottom font-medium min-w-[5rem]">
+              <div class="font-mono text-xs text-accent-600 dark:text-accent-300">{g.label}</div>
+              <div class="text-[10px] text-ink-500 font-normal mt-1 leading-tight">{g.audience}</div>
+            </th>
+          ))}
+        </tr>
+      </thead>
+      <tbody>
+        {entry.data.punkty.map((p: any) => (
+          <tr class="border-b border-ink-200 dark:border-ink-800 hover:bg-ink-50 dark:hover:bg-ink-900">
+            <td class="py-3 pr-3 align-top font-mono text-sm font-semibold">{p.id})</td>
+            <td class="py-3 pr-3 align-top text-sm">{p.opys}</td>
+            {grafy.map((g) => {
+              const cat = p.grafy[g.code] ?? '—';
+              return (
+                <td class="py-3 px-2 align-top text-center">
+                  <span
+                    class:list={['inline-block px-2 py-1 rounded font-mono text-xs font-semibold', categoryColor(cat)]}
+                    title={categoryDescription(cat)}
+                  >{cat}</span>
+                </td>
+              );
+            })}
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </div>
+
+  {entry.data.references && (
+    <section class="mt-8">
+      <h2 class="text-base font-semibold mb-3">Перехресні посилання</h2>
+      <ul class="space-y-1 text-sm">
+        {entry.data.references.poyasnennia && (
+          <li>Пояснення: <code class="font-mono text-xs">{entry.data.references.poyasnennia}</code></li>
+        )}
+        {entry.data.references.tdv && (
+          <li>Таблиці додаткових вимог: <code class="font-mono text-xs">{entry.data.references.tdv}</code></li>
+        )}
+      </ul>
+    </section>
+  )}
+
+  <div class="mt-8 pt-6 border-t border-ink-200 dark:border-ink-800 flex flex-wrap gap-3">
+    <a href={`https://github.com/workflowcat/nakaz-402/edit/main/dodatky/01-rozklad-khvorob/stattia-${String(entry.data.stattia).padStart(3, '0')}.yaml`} target="_blank" rel="noopener" class="text-sm inline-flex items-center gap-2 px-3 py-1.5 rounded-md border border-ink-200 dark:border-ink-700 hover:border-accent-500 hover:text-accent-600">
+      ✏ Редагувати на GitHub
+    </a>
+    <a href={entry.data.source ?? 'https://zakon.rada.gov.ua/laws/show/z1109-08'} target="_blank" rel="noopener" class="text-sm inline-flex items-center gap-2 px-3 py-1.5 rounded-md border border-ink-200 dark:border-ink-700 hover:border-accent-500 hover:text-accent-600">
+      Офіційне джерело ↗
+    </a>
+  </div>
+</Layout>

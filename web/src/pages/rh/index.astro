@@ -1,0 +1,92 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import { getCollection } from 'astro:content';
+import { getKlasy, getGrafy, getCategories, categoryColor } from '../../lib/rh';
+
+const stattii = await getCollection('rh');
+const sorted = stattii.sort((a, b) => a.data.stattia - b.data.stattia);
+const klasy = getKlasy();
+const grafy = getGrafy();
+const cats = getCategories();
+---
+<Layout
+  title="Розклад хвороб"
+  description="Структурована таблиця категорій придатності до військової служби за станом здоров'я. Додаток 1 до Положення про ВЛЕ."
+>
+  <div class="mb-4 px-4 py-3 rounded-md bg-amber-50 dark:bg-amber-900/20 border-l-2 border-amber-500 text-sm text-amber-800 dark:text-amber-200 mt-6">
+    <strong>Демо-дані для прототипу.</strong>
+    Значення категорій придатності в наявних статтях <em>ілюстративні</em>,
+    не звірені з чинною редакцією. Перед використанням у будь-яких рішеннях
+    звіряйте з офіційним текстом на <a href="https://zakon.rada.gov.ua/laws/show/z1109-08" target="_blank" rel="noopener" class="underline">zakon.rada.gov.ua</a>.
+  </div>
+
+  <h1 class="text-3xl font-bold tracking-tight mt-6 mb-3">Розклад хвороб</h1>
+  <p class="text-ink-500 mb-3 max-w-3xl leading-relaxed">
+    Додаток 1 до Положення. Кожна стаття — окрема нозологічна група
+    (туберкульоз, гіпертензія, психічні розлади тощо) із кількома пунктами
+    за ступенем тяжкості, де для кожного пункту визначається
+    <strong>категорія придатності</strong> окремо для 4 типів контингенту.
+  </p>
+  <p class="text-sm text-ink-500 mb-8">
+    Зараз у системі: <strong>{stattii.length}</strong> з ~80—90 статей.
+    Повне наповнення — у roadmap.
+  </p>
+
+  <section class="mb-10">
+    <h2 class="text-base font-semibold mb-3">Категорії придатності</h2>
+    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
+      {cats.map((c) => (
+        <div class="rounded-md border border-ink-200 dark:border-ink-800 p-3">
+          <span class:list={['text-xs font-mono font-semibold uppercase px-1.5 py-0.5 rounded', categoryColor(c.code)]}>{c.code}</span>
+          <div class="text-xs text-ink-500 mt-2 leading-snug">{c.description}</div>
+        </div>
+      ))}
+    </div>
+  </section>
+
+  <section class="mb-10">
+    <h2 class="text-base font-semibold mb-3">Графи (контингенти)</h2>
+    <ul class="grid sm:grid-cols-2 gap-2">
+      {grafy.map((g) => (
+        <li class="rounded-md border border-ink-200 dark:border-ink-800 p-3 text-sm">
+          <span class="font-mono text-xs text-accent-600 dark:text-accent-300">{g.label}</span>
+          <div class="font-medium mt-1">{g.audience}</div>
+        </li>
+      ))}
+    </ul>
+  </section>
+
+  <section>
+    <h2 class="text-base font-semibold mb-3">Наявні статті</h2>
+    <ul class="space-y-2">
+      {sorted.map((s) => {
+        const klas = klasy.find((k) => k.id === s.data.klas);
+        return (
+          <li>
+            <a
+              href={`/rh/${String(s.data.stattia).padStart(3, '0')}/`}
+              class="block p-4 rounded-md border border-ink-200 dark:border-ink-800 hover:border-accent-500 hover:bg-ink-50 dark:hover:bg-ink-900 transition-colors"
+            >
+              <div class="flex items-baseline gap-3 flex-wrap mb-1">
+                <span class="font-mono text-xs text-accent-600 dark:text-accent-300">Стаття {s.data.stattia}</span>
+                {klas && <span class="text-xs text-ink-500">{klas.nazva}</span>}
+                <span class="ml-auto text-xs text-ink-500">{s.data.punkty.length} {s.data.punkty.length === 1 ? 'пункт' : s.data.punkty.length < 5 ? 'пункти' : 'пунктів'}</span>
+              </div>
+              <div class="font-medium">{s.data.nazva}</div>
+              <div class="mt-2 flex gap-1 flex-wrap">
+                {s.data.punkty.map((p: any) => (
+                  <div class="flex items-center gap-1 text-[10px] font-mono">
+                    <span class="text-ink-500">{p.id})</span>
+                    {Object.entries(p.grafy).map(([_g, cat]: any) => (
+                      <span class:list={['px-1.5 py-0.5 rounded', categoryColor(cat)]}>{cat}</span>
+                    ))}
+                  </div>
+                ))}
+              </div>
+            </a>
+          </li>
+        );
+      })}
+    </ul>
+  </section>
+</Layout>

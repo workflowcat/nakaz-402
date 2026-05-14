@@ -29,6 +29,7 @@ const copies = [
   ['polozhennia', 'polozhennia'],
   ['dodatky', 'dodatky'],
   ['drafts', 'drafts'],
+  ['dodatky/01-rozklad-khvorob', 'rh'],   // РХ — окрема collection для калькулятора
   ['nakaz.md', 'nakaz/nakaz.md'],
   ['meta/amendments.yaml', '_data/amendments.yaml'],
   ['meta/glossary.md', '_data/glossary.md'],

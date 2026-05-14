@@ -101,4 +101,29 @@ const drafts = defineCollection({
   }).passthrough(),
 });
 
-export const collections = { polozhennia, nakaz, dodatky, drafts };
+// Розклад хвороб — структуровані YAML-статті з категоріями придатності.
+const rh = defineCollection({
+  loader: glob({ pattern: 'stattia-*.yaml', base: './src/content/rh' }),
+  schema: z.object({
+    id: z.string(),
+    stattia: z.number(),
+    klas: z.string(),
+    nazva: z.string(),
+    short_nazva: z.string().optional(),
+    source: z.string().optional(),
+    status: z.string().optional(),
+    last_amended: z.object({
+      date: z.union([z.string(), z.date()]),
+      order: z.string(),
+    }).optional(),
+    amended_by: z.array(z.any()).optional(),
+    punkty: z.array(z.object({
+      id: z.string(),
+      opys: z.string(),
+      grafy: z.record(z.string(), z.string()),
+    })),
+    references: z.record(z.string(), z.union([z.string(), z.array(z.string())])).optional(),
+  }).passthrough(),
+});
+
+export const collections = { polozhennia, nakaz, dodatky, drafts, rh };
