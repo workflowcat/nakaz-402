@@ -1,0 +1,41 @@
+name: 📝 Контент: помилка або заповнення заглушки
+description: Знайшов розбіжність з офіційним текстом, чи готовий заповнити stub
+title: "content: <короткий опис>"
+labels: [content]
+body:
+  - type: dropdown
+    id: kind
+    attributes:
+      label: Тип проблеми
+      options:
+        - "Заповнення stub (готовий перенести текст)"
+        - "Розбіжність з офіційним текстом (друкарська/смислова помилка)"
+        - "Пропущений амендмент в історії пункту"
+        - "Інше"
+    validations:
+      required: true
+  - type: input
+    id: file
+    attributes:
+      label: Файл (шлях у репо)
+      placeholder: "polozhennia/01-osnovy-organizatsii/02-organy-vle.md"
+    validations:
+      required: true
+  - type: input
+    id: id_or_anchor
+    attributes:
+      label: id або якір
+      description: "Який саме пункт (`polozhennia.r1.gl2.p2.5`, або просто якір `#p2.5`)"
+      placeholder: "polozhennia.r1.gl2.p2.5"
+  - type: textarea
+    id: details
+    attributes:
+      label: Опис
+      description: Що саме не так / що збираєтесь заповнити. Якщо є цитата з офіційного тексту — додайте.
+    validations:
+      required: true
+  - type: input
+    id: source_url
+    attributes:
+      label: Посилання на офіційне джерело (рекомендовано)
+      placeholder: "https://zakon.rada.gov.ua/laws/show/z1109-08#..."

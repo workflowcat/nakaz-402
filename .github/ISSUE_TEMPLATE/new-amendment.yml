@@ -1,0 +1,62 @@
+name: 📜 Новий амендмент (наказ-зміна)
+description: Зафіксувати, що вийшов новий наказ Міноборони, що змінює 402-й
+title: "amendment: наказ № <номер> від <YYYY-MM-DD>"
+labels: [amendment, triage]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Дякую, що зловили амендмент! Заповніть поля нижче — далі мейнтейнер
+        або ви самі заведете PR за шаблоном з [CONTRIBUTING](../../blob/main/CONTRIBUTING.md).
+  - type: input
+    id: order_number
+    attributes:
+      label: Номер наказу-зміни
+      placeholder: "153"
+    validations:
+      required: true
+  - type: input
+    id: signed_at
+    attributes:
+      label: Дата підписання (YYYY-MM-DD)
+      placeholder: "2025-02-27"
+    validations:
+      required: true
+  - type: input
+    id: registration
+    attributes:
+      label: Реєстрація в Мін'юсті
+      description: "Формат zNNNN-YY (як на rada.gov.ua)"
+      placeholder: "z0329-25"
+    validations:
+      required: true
+  - type: input
+    id: source_url
+    attributes:
+      label: Посилання на офіційний текст
+      placeholder: "https://zakon.rada.gov.ua/laws/show/z0329-25"
+    validations:
+      required: true
+  - type: textarea
+    id: summary
+    attributes:
+      label: Коротко: що змінено
+      description: 1-3 речення. Великі правки коротко, точкові — точно.
+      placeholder: "Доповнено главу 1 розділу I новим пунктом 1.4..."
+    validations:
+      required: true
+  - type: textarea
+    id: affected
+    attributes:
+      label: Зачеплені пункти (за можливості)
+      description: |
+        Список id у форматі `polozhennia.rN.glN.pN.N` або `dodatok.N.stattia.N`,
+        чи навіть просто словесний опис, якщо точно не знаєте.
+      placeholder: "polozhennia.r1.gl1.p1.4 (новий пункт)"
+  - type: checkboxes
+    id: ready
+    attributes:
+      label: Готовність
+      options:
+        - label: Я готовий зробити PR сам
+        - label: Лишаю на мейнтейнерів

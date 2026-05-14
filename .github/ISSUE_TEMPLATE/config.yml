@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: 📖 Офіційний текст Наказу 402
+    url: https://zakon.rada.gov.ua/laws/show/z1109-08
+    about: Це інженерна реплікація. Юридично авторитетний текст — на rada.gov.ua.
+  - name: 🤔 Питання або обговорення підходу
+    url: https://github.com/${{ github.repository }}/discussions
+    about: Питання щодо архітектури, схеми frontmatter, конвенцій — у Discussions.
