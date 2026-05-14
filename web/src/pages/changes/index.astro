@@ -1,8 +1,61 @@
 ---
 import Layout from '../../layouts/Layout.astro';
+import { loadAmendments } from '../../lib/amendments';
+
+const { base, amendments } = loadAmendments();
+const sorted = [...amendments].sort((a, b) => b.signed_at.localeCompare(a.signed_at));
+
+const byYear = new Map<string, typeof sorted>();
+for (const a of sorted) {
+  const y = a.signed_at.slice(0, 4);
+  if (!byYear.has(y)) byYear.set(y, []);
+  byYear.get(y)!.push(a);
+}
+const years = [...byYear.keys()];
+
+function fmtDate(s: string): string {
+  const m = s.match(/(\d{4})-(\d{2})-(\d{2})/);
+  return m ? `${m[3]}.${m[2]}.${m[1]}` : s;
+}
 ---
-<Layout title="Зміни">
-  <h1 class="text-3xl font-bold tracking-tight mt-6 mb-3">Управління змінами</h1>
-  <p class="text-ink-500 mb-6">Dashboard переноситься з Jekyll-версії. В наступному проході — повний таймлайн + фільтри + heatmap.</p>
-  <p class="text-sm">Поки що → <a href="https://workflowcat.github.io/nakaz-402/changes/" class="text-accent-600 underline">старий dashboard на Jekyll</a></p>
+<Layout title="Зміни" description={`${amendments.length} наказів-змін до Наказу МОУ № 402 з ${sorted[sorted.length - 1]?.signed_at?.slice(0,4)} року`}>
+  <div class="flex items-baseline justify-between mt-6 mb-3 flex-wrap gap-3">
+    <h1 class="text-3xl font-bold tracking-tight">Управління змінами</h1>
+    <div class="flex gap-3 text-sm">
+      <a href="/changes/rss.xml" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md border border-ink-200 dark:border-ink-700 hover:border-accent-500 hover:text-accent-600">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M4 4a16 16 0 0116 16h-3.2A12.8 12.8 0 004 7.2V4zM4 10a10 10 0 0110 10H10.8A6.8 6.8 0 004 13.2V10zM4 16a4 4 0 014 4H4v-4z"/></svg>
+        RSS
+      </a>
+      <a href="/changes/atom.xml" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md border border-ink-200 dark:border-ink-700 hover:border-accent-500 hover:text-accent-600">
+        Atom
+      </a>
+    </div>
+  </div>
+
+  <p class="text-ink-500 mb-8">
+    <strong>{amendments.length}</strong> наказів-змін до Положення (затвердженого Наказом МОУ № {base.order} від {fmtDate(base.signed_at)}).
+    Підпишіться на RSS/Atom, щоб отримувати сповіщення про нові редакції.
+  </p>
+
+  <div class="space-y-8">
+    {years.map((year) => (
+      <section>
+        <h2 class="text-sm font-mono font-semibold uppercase tracking-wider text-ink-500 mb-3 sticky top-14 bg-white dark:bg-ink-950 py-1">{year}</h2>
+        <ul class="space-y-2">
+          {byYear.get(year)!.map((a) => (
+            <li id={a.order} class="flex items-baseline gap-3 py-2 border-b border-ink-200 dark:border-ink-800 last:border-0">
+              <span class="font-mono text-xs text-ink-500 min-w-[6rem]">{fmtDate(a.signed_at)}</span>
+              <a
+                href={a.registration ? `https://zakon.rada.gov.ua/laws/show/${a.registration}` : '#'}
+                target={a.registration ? '_blank' : undefined}
+                rel={a.registration ? 'noopener' : undefined}
+                class="font-mono text-sm text-accent-600 dark:text-accent-300 hover:underline min-w-[4.5rem]"
+              >№ {a.order}</a>
+              <span class="text-sm flex-1">{a.summary ?? 'Зміни до Наказу МОУ № 402.'}</span>
+            </li>
+          ))}
+        </ul>
+      </section>
+    ))}
+  </div>
 </Layout>
