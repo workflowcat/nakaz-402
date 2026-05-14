@@ -1,34 +1,25 @@
 #!/usr/bin/env python3
-"""Парсер rada.gov.ua → структурований Markdown для нашого репо.
+"""Парсер офіційного PDF наказу 402 → структуровані Markdown файли репо.
 
-Тягне сторінку наказу 402 з rada.gov.ua (або з локального файла), знаходить
-зазначену главу, екстрагує текст пункт за пунктом, розпізнає маркери
-амендментів у фігурних дужках і складає файл у форматі нашого frontmatter.
-
-Чому це окремий tool, який ти запускаєш сам:
-- Працює з public-domain офіційним текстом, що публікується rada.gov.ua
-- Авторитетним джерелом залишається rada.gov.ua; цей tool — інженерна допомога
-- Ти контролюєш коли і що тягнути (rate limit, cache, ручний review)
+Підтримує:
+- PDF з rada.gov.ua «Текст для друку» (через pdfplumber)
+- Локальний txt-кеш (для швидкого re-run)
+- Авто-розпізнавання структури: Розділ → Глава → Пункт
+- Амендмент-маркери у {...} → блок-цитати + auto-populate amended_by
+- Стабільні id за нашою граматикою polozhennia.rN.glM, пункти як якорі
 
 Використання:
+    # Витягти все одним пасом (24 файли)
+    python3 scripts/pull_chapter.py --pdf "/path/to/order-402.pdf"
 
-    # Витягти Розділ I Главу 3 з locally-cached HTML:
-    python3 scripts/pull_chapter.py --html /tmp/nakaz-402.html \
-        --chapter "Розділ I Глава 3" --out polozhennia/01-osnovy-organizatsii/03-rozhliad-zvernen.md
+    # З локального txt-кешу (швидше)
+    python3 scripts/pull_chapter.py --txt /tmp/nakaz-402-full.txt
 
-    # Витягти Розділ II Главу 2 з прямого fetch'у:
-    python3 scripts/pull_chapter.py --url https://zakon.rada.gov.ua/laws/show/z1109-08/print \
-        --chapter "Розділ II Глава 2" --out polozhennia/02-medychnyi-oglyad/02-glava.md
+    # Тільки одну главу
+    python3 scripts/pull_chapter.py --txt /tmp/nakaz-402-full.txt --only 2.3
 
-    # Витягти редакцію станом на конкретну дату (історична версія):
-    python3 scripts/pull_chapter.py --url https://zakon.rada.gov.ua/laws/show/z1109-08/ed20240427/print \
-        --chapter "Розділ I Глава 2" --out /tmp/glava2-as-of-2024-04-27.md
-
-    # Перелічити всі знайдені секції:
-    python3 scripts/pull_chapter.py --html /tmp/nakaz-402.html --list
-
-Output: Markdown-файл з frontmatter (id, type, parent_id, title, source, status,
-amended_by) і дослівним текстом з блок-цитатами маркерів {Із змінами...}.
+    # Препроцесинг: тільки extract text → файл (для швидких ітерацій)
+    python3 scripts/pull_chapter.py --pdf "/path/to/order-402.pdf" --extract-only /tmp/full.txt
 """
 
 from __future__ import annotations
@@ -38,267 +29,409 @@ import re
 import sys
 from dataclasses import dataclass, field
 from pathlib import Path
-from urllib.request import Request, urlopen
-
-try:
-    from bs4 import BeautifulSoup, NavigableString
-except ImportError:
-    sys.stderr.write("ERROR: BeautifulSoup не встановлено. pip install beautifulsoup4 lxml\n")
-    sys.exit(2)
 
 
 REPO = Path(__file__).resolve().parent.parent
-RADA_BASE = "https://zakon.rada.gov.ua/laws/show/z1109-08"
-
-ROMAN = {1: "I", 2: "II", 3: "III", 4: "IV", 5: "V", 6: "VI", 7: "VII", 8: "VIII", 9: "IX", 10: "X"}
+ROZDIL_DIRS = {
+    1: "01-osnovy-organizatsii",
+    2: "02-medychnyi-oglyad",
+}
+GLAVA_FILENAMES = {
+    # Розділ I — людино-читабельні слаги для відомих глав
+    (1, 1): "01-zagalni-polozhennia",
+    (1, 2): "02-organy-vle",
+    (1, 3): "03-rozhliad-zvernen",
+    # Розділ II Глава 1 — те саме
+    (2, 1): "01-zagalni-polozhennia",
+}
+ROMAN = {"I": 1, "II": 2, "III": 3, "IV": 4, "V": 5, "VI": 6, "VII": 7, "VIII": 8, "IX": 9, "X": 10}
 ROMAN_REV = {v: k for k, v in ROMAN.items()}
 
 
+# ──────────────────────────────────────────────────────────────────
+# Витягнення тексту з PDF
+# ──────────────────────────────────────────────────────────────────
+
+def extract_text_from_pdf(path: str) -> str:
+    try:
+        import pdfplumber
+    except ImportError:
+        sys.stderr.write("ERROR: pdfplumber не встановлено. pip install pdfplumber\n")
+        sys.exit(2)
+    pages = []
+    with pdfplumber.open(path) as pdf:
+        for page in pdf.pages:
+            text = page.extract_text() or ""
+            lines = text.split("\n")
+            # Прибираємо стандартну сторінкову header-стрічку
+            if lines and "затвердження Положення про" in lines[0]:
+                lines = lines[1:]
+            pages.append("\n".join(lines))
+    full = "\n".join(pages)
+    # Cleanup: прибираємо page-footer лінії типу "https://zakon.../print 14/169"
+    full = re.sub(r'(?m)^https?://zakon\.rada\.gov\.ua/[^\s]+\s+\d+/\d+\s*$', '', full)
+    # Date-time headers типу "5/14/26, 3:14 PM ..."
+    full = re.sub(r'(?m)^\d+/\d+/\d+,\s+\d+:\d+\s+(AM|PM)\s+.*$', '', full)
+    return full
+
+
+# ──────────────────────────────────────────────────────────────────
+# Парсинг структури
+# ──────────────────────────────────────────────────────────────────
+
+ROZDIL_RE   = re.compile(r"^([IVX]+)\.\s+(.+?)\s*$")
+GLAVA_RE    = re.compile(r"^(\d+)\.\s+([А-ЯІЇЄҐ][^.]{3,150})\s*$")  # перше слово з великої, без крапки в кінці
+PUNKT_RE    = re.compile(r"^(\d+\.\d+(?:\.\d+)?)\.\s+(.+)$")
+SUBPUNKT_RE = re.compile(r"^([а-яіїєґ])\)\s+(.+)$")   # «а) текст»
+MARKER_OPEN = re.compile(r"^\{")
+MARKER_CLOSE = re.compile(r"\}\s*$")
+
+
 @dataclass
-class Section:
-    rozdil_num: int = 0   # 1, 2, 3...
-    rozdil_name: str = ""
-    glava_num: int = 0
-    glava_name: str = ""
-    elements: list = field(default_factory=list)  # list of HTML-tags within the section
+class Punkt:
+    num: str               # "1.1" or "2.3.1"
+    text_lines: list = field(default_factory=list)
+    markers: list = field(default_factory=list)  # list of {raw, year, order_ref, scope}
 
 
-def fetch_html(url: str) -> str:
-    """Завантажує HTML з rada.gov.ua з нормальним User-Agent."""
-    req = Request(url, headers={
-        "User-Agent": "Mozilla/5.0 (nakaz-402 puller; contact via github.com/workflowcat/nakaz-402)",
-        "Accept-Language": "uk,en;q=0.5",
-    })
-    with urlopen(req) as r:
-        return r.read().decode("utf-8")
+@dataclass
+class Glava:
+    rozdil_num: int
+    num: int
+    title: str
+    punkty: list = field(default_factory=list)
+    intro_lines: list = field(default_factory=list)  # before first punkt
+    raw_markers: list = field(default_factory=list)
 
 
-def parse_sections(soup: BeautifulSoup) -> list[Section]:
-    """Витягує список усіх розділ/глава секцій документа.
+def is_glava_header(line: str, prev_was_rozdil_or_blank: bool) -> tuple[int, str] | None:
+    """Розпізнаємо «1. Загальні положення» — короткий рядок, велика буква, без додаткових крапок.
 
-    Стратегія: проходимо через всі прямі нащадки body (або основного контейнера),
-    знаходимо текст-маркери «Розділ X» і «Глава N. ...», групуємо все між ними.
+    Контекст: «глава» завжди йде після розділу або після порожнього рядка (між главами).
+    Також ми очікуємо <100 символів — щоб не сплутати з пунктом наказу типу «1. Затвердити Положення...».
     """
-    sections: list[Section] = []
-    current: Section | None = None
-    current_rozdil_num = 0
-    current_rozdil_name = ""
-
-    # Збираємо всі parsable елементи у послідовність
-    # Зосереджуємось на <p>, <div>, які мають текст
-    container = soup.find("body") or soup
-    elements = container.find_all(["p", "div", "h1", "h2", "h3", "h4", "table"], recursive=True)
-
-    rozdil_re = re.compile(r"^Розділ\s+(I{1,3}|IV|V{1,3}|IX|X)\s*\.?\s*(.*)?$", re.UNICODE)
-    glava_re = re.compile(r"^Глава\s+(\d+)\s*\.?\s*(.*)?$", re.UNICODE)
-
-    for el in elements:
-        # Шукаємо тільки прямий текст вузла (не вкладені)
-        # Беремо .get_text(strip=True) — повний текст
-        text = el.get_text(separator=" ", strip=True)
-        if not text or len(text) > 400:
-            # Скоріш за все блок-контент, не заголовок
-            # Все одно додаємо в current section якщо є
-            if current and len(text) > 0:
-                current.elements.append(el)
-            continue
-
-        # Roz dil header?
-        m = rozdil_re.match(text)
-        if m:
-            current_rozdil_num = ROMAN_REV.get(m.group(1), 0)
-            current_rozdil_name = (m.group(2) or "").strip().rstrip(".")
-            continue
-
-        # Glava header?
-        m = glava_re.match(text)
-        if m and len(text) < 250:
-            # Зберегти попередню секцію
-            if current:
-                sections.append(current)
-            current = Section(
-                rozdil_num=current_rozdil_num,
-                rozdil_name=current_rozdil_name,
-                glava_num=int(m.group(1)),
-                glava_name=(m.group(2) or "").strip().rstrip("."),
-            )
-            continue
-
-        # Звичайний контент — додати до current
-        if current:
-            current.elements.append(el)
-
-    if current:
-        sections.append(current)
-    return sections
-
-
-def element_to_markdown(el) -> str:
-    """Конвертує один HTML-елемент у Markdown-фрагмент."""
-    text = el.get_text(separator=" ", strip=True)
-    if not text:
-        return ""
-
-    # Маркер амендменту: текст у фігурних дужках
-    if text.startswith("{") and text.endswith("}"):
-        # Перетворити <a href="...">текст</a> на [текст](URL)
-        md = ""
-        for child in el.descendants:
-            if isinstance(child, NavigableString):
-                md += str(child)
-            elif child.name == "a" and child.get("href"):
-                href = child["href"]
-                # Скорочуємо до zXXXX-XX якщо це rada.gov.ua анкер
-                m = re.search(r"(z\d{3,5}-\d{2})", href)
-                label = m.group(1) if m else child.get_text(strip=True)
-                md = md.rstrip()
-                md += f" [{label}]({href})"
-        md = re.sub(r"\s+", " ", md).strip()
-        return f"> *{md}*"
-
-    # Пункт-header: «1.1.», «2.3.», «10.1.» — окремий <p> з коротким текстом
-    m = re.match(r"^(\d+(?:\.\d+){0,2})\.\s*(.+)$", text)
-    if m and len(text) < 120:
-        # Це може бути заголовок пункту з його початковим текстом
-        # Або просто короткий пункт повністю
-        return f"## {m.group(1)}.\n\n{m.group(2)}"
-
-    # Звичайний абзац — повертаємо текст з прибраним whitespace
-    return text
-
-
-def section_to_markdown(s: Section, original_text_id: str | None = None) -> str:
-    """Генерує повний .md файл для глави."""
-    if not s.glava_num:
-        return ""
-
-    page_id = f"polozhennia.r{s.rozdil_num}.gl{s.glava_num}"
-    parent_id = f"polozhennia.r{s.rozdil_num}"
-    rozdil_roman = ROMAN.get(s.rozdil_num, str(s.rozdil_num))
-
-    fm = (
-        "---\n"
-        f"id: {page_id}\n"
-        "type: glava\n"
-        f"parent_id: {parent_id}\n"
-        f"title: \"Глава {s.glava_num}. {s.glava_name}\"\n"
-        "flavor: content\n"
-        "source: https://zakon.rada.gov.ua/laws/show/z1109-08\n"
-        "status: active\n"
-        f"parent: \"Розділ {rozdil_roman}. {s.rozdil_name}\"\n"
-        "grand_parent: Положення\n"
-        f"nav_order: {s.glava_num}\n"
-        "---\n\n"
-    )
-
-    body_parts = [f"# Глава {s.glava_num}. {s.glava_name}\n"]
-    body_parts.append("{% include chapter-context.html %}")
-    body_parts.append("{% include amendment-history.html %}\n")
-
-    current_punkt = None
-    paragraphs = []
-
-    for el in s.elements:
-        md = element_to_markdown(el)
-        if not md:
-            continue
-
-        # Якщо це новий пункт-header
-        if md.startswith("## "):
-            # Зберегти попередній якщо був
-            paragraphs.append(md)
-            # Запам'ятати номер для anchor
-            m = re.match(r"## (\d+(?:\.\d+){0,2})\.", md)
-            if m:
-                anchor = "p" + m.group(1)
-                paragraphs.append(f'<a id="{anchor}"></a>')
-                # Перевернути порядок: anchor має бути ПЕРЕД h2
-                paragraphs[-2], paragraphs[-1] = paragraphs[-1], paragraphs[-2]
-        else:
-            paragraphs.append(md)
-
-    body_parts.extend(paragraphs)
-
-    return fm + "\n\n".join(body_parts) + "\n"
-
-
-def list_sections(soup: BeautifulSoup) -> None:
-    """Печатає перелік знайдених розділ/глава секцій."""
-    sections = parse_sections(soup)
-    print(f"Знайдено {len(sections)} глав:\n")
-    for s in sections:
-        rozdil_roman = ROMAN.get(s.rozdil_num, "?")
-        title = s.glava_name or "(без назви)"
-        el_count = len(s.elements)
-        print(f"  Розділ {rozdil_roman:>3} · Глава {s.glava_num:>2}. {title:<60}  [{el_count} blocks]")
-
-
-def find_section(soup: BeautifulSoup, query: str) -> Section | None:
-    """Знаходить секцію за запитом виду 'Розділ I Глава 3'."""
-    m = re.match(r"\s*Розділ\s+(I{1,3}|IV|V{1,3}|IX|X)\s+Глава\s+(\d+)\s*", query, re.UNICODE)
+    m = GLAVA_RE.match(line)
     if not m:
         return None
-    target_rozdil = ROMAN_REV.get(m.group(1), 0)
-    target_glava = int(m.group(2))
-    for s in parse_sections(soup):
-        if s.rozdil_num == target_rozdil and s.glava_num == target_glava:
-            return s
-    return None
+    if not prev_was_rozdil_or_blank:
+        return None
+    title = m.group(2).strip()
+    # Виключаємо false-positive: якщо в рядку є коми/двокрапки — не глава
+    if "," in title or ":" in title:
+        return None
+    # Назва глави типово до 80 символів
+    if len(title) > 100:
+        return None
+    return int(m.group(1)), title
 
+
+def parse_document(text: str) -> dict:
+    """Повертає dict з ключами 'glava_(rozdil,num)' → Glava."""
+    lines = text.split("\n")
+    glavas: dict[tuple[int, int], Glava] = {}
+    current_rozdil = 0
+    current_glava: Glava | None = None
+    current_punkt: Punkt | None = None
+    in_marker = False
+    marker_buffer: list[str] = []
+    prev_was_rozdil_or_blank = True
+
+    def flush_marker(target):
+        if not marker_buffer:
+            return
+        raw = " ".join(l.strip() for l in marker_buffer).strip()
+        if raw.startswith("{"): raw = raw[1:]
+        if raw.endswith("}"): raw = raw[:-1]
+        target.append(raw.strip())
+
+    for raw_line in lines:
+        line = raw_line.rstrip()
+        stripped = line.strip()
+
+        # Continuation of marker
+        if in_marker:
+            marker_buffer.append(stripped)
+            if MARKER_CLOSE.search(stripped):
+                in_marker = False
+                target = current_punkt.markers if current_punkt else (
+                    current_glava.raw_markers if current_glava else []
+                )
+                flush_marker(target)
+                marker_buffer = []
+                # після закриття маркера — наступний рядок може бути новою главою
+                prev_was_rozdil_or_blank = True
+            continue
+
+        # Marker start
+        if MARKER_OPEN.match(stripped):
+            if MARKER_CLOSE.search(stripped):
+                # single-line marker
+                raw = stripped[1:].rstrip()
+                if raw.endswith("}"): raw = raw[:-1]
+                target = current_punkt.markers if current_punkt else (
+                    current_glava.raw_markers if current_glava else []
+                )
+                target.append(raw.strip())
+                prev_was_rozdil_or_blank = True  # після маркера може йти глава
+            else:
+                in_marker = True
+                marker_buffer = [stripped]
+            continue
+
+        # Empty line — boundary signal
+        if not stripped:
+            prev_was_rozdil_or_blank = True
+            continue
+
+        # Розділ header
+        m = ROZDIL_RE.match(stripped)
+        if m and m.group(1) in ROMAN and len(stripped) < 100:
+            # Це може бути або справжній розділ, або частина тексту
+            # Перевіряємо: чи це коротка назва типу "I. Основи..."
+            title = m.group(2).strip()
+            if not any(p in title for p in ['.', ',', ':']) and len(title) < 80:
+                current_rozdil = ROMAN[m.group(1)]
+                current_glava = None
+                current_punkt = None
+                prev_was_rozdil_or_blank = True
+                continue
+
+        # Глава header
+        gh = is_glava_header(stripped, prev_was_rozdil_or_blank)
+        if gh and current_rozdil > 0:
+            num, title = gh
+            current_glava = Glava(rozdil_num=current_rozdil, num=num, title=title)
+            glavas[(current_rozdil, num)] = current_glava
+            current_punkt = None
+            prev_was_rozdil_or_blank = True
+            continue
+
+        # Punkt header
+        pm = PUNKT_RE.match(stripped)
+        if pm and current_glava:
+            num = pm.group(1)
+            rest = pm.group(2).strip()
+            current_punkt = Punkt(num=num)
+            current_punkt.text_lines.append(rest)
+            current_glava.punkty.append(current_punkt)
+            prev_was_rozdil_or_blank = False
+            continue
+
+        # Plain content
+        if current_punkt is not None:
+            current_punkt.text_lines.append(stripped)
+        elif current_glava is not None:
+            current_glava.intro_lines.append(stripped)
+        prev_was_rozdil_or_blank = False
+
+    return glavas
+
+
+# ──────────────────────────────────────────────────────────────────
+# Рендеринг Markdown
+# ──────────────────────────────────────────────────────────────────
+
+ORDER_RE = re.compile(r"Наказ[ом|у]*\s+Міністерства\s+оборони\s+№\s*(\d+)\s+від\s+(\d{2}\.\d{2}\.\d{4})")
+REG_RE = re.compile(r"(z\d{3,5}-\d{2})")
+
+
+def parse_marker(raw: str) -> dict:
+    """Витягає з marker'у дату, наказ, op, scope."""
+    out = {"raw": raw, "op": "edit", "date": None, "order": None, "scope": None}
+    # Op detection
+    text = raw.lower()
+    if "доповнено новою главою" in text or "доповнено новим" in text:
+        out["op"] = "insert"
+    elif "в редакції наказу" in text or "у редакції наказу" in text:
+        out["op"] = "redaction"
+    elif "виключено" in text or "втратив чинність" in text:
+        out["op"] = "repeal"
+    elif "із змінами" in text or "із змінам" in text:
+        out["op"] = "edit"
+    # Date + order
+    m = ORDER_RE.search(raw)
+    if m:
+        order_num = m.group(1)
+        date = m.group(2)
+        # Convert DD.MM.YYYY → YYYY-MM-DD
+        try:
+            dd, mm, yyyy = date.split(".")
+            out["date"] = f"{yyyy}-{mm}-{dd}"
+        except Exception:
+            out["date"] = date
+        out["order_num"] = order_num
+    # Registration reference (для лінків zXXXX-XX)
+    rm = REG_RE.search(raw)
+    if rm:
+        out["order"] = rm.group(1)
+    return out
+
+
+def render_marker_md(raw: str) -> str:
+    """Конвертує текст маркера у Markdown-блокцитату, лінкує z****-**."""
+    text = raw
+    # Замінюємо zNNNN-YY на markdown link
+    def linkify(m):
+        ref = m.group(1)
+        return f"[{ref}](https://zakon.rada.gov.ua/laws/show/{ref})"
+    text = REG_RE.sub(linkify, text)
+    return "> *{" + text + "}*"
+
+
+def render_glava(g: Glava) -> str:
+    """Будує повний .md контент глави з frontmatter."""
+    page_id = f"polozhennia.r{g.rozdil_num}.gl{g.num}"
+    parent_id = f"polozhennia.r{g.rozdil_num}"
+    roman = ROMAN_REV.get(g.rozdil_num, str(g.rozdil_num))
+    rozdil_name = "Основи організації ВЛЕ" if g.rozdil_num == 1 else "Медичний огляд"
+
+    # Зведений amended_by — об'єднання маркерів зі всіх пунктів + глави
+    seen = set()
+    amended_by_entries = []
+    all_markers = list(g.raw_markers)
+    for p in g.punkty:
+        all_markers.extend(p.markers)
+    for raw in all_markers:
+        info = parse_marker(raw)
+        if not info.get("date") or not info.get("order"):
+            continue
+        key = (info["date"], info["order"], info["op"])
+        if key in seen:
+            continue
+        seen.add(key)
+        amended_by_entries.append(info)
+
+    amended_by_entries.sort(key=lambda x: (x["date"] or "9999", x["order"] or ""))
+
+    # Frontmatter
+    fm_lines = ["---"]
+    fm_lines.append(f"id: {page_id}")
+    fm_lines.append("type: glava")
+    fm_lines.append(f"parent_id: {parent_id}")
+    title_escaped = g.title.replace('"', '\\"')
+    fm_lines.append(f'title: "Глава {g.num}. {title_escaped}"')
+    fm_lines.append("flavor: content")
+    fm_lines.append("source: https://zakon.rada.gov.ua/laws/show/z1109-08")
+    fm_lines.append("status: active")
+    fm_lines.append(f'parent: "Розділ {roman}. {rozdil_name}"')
+    fm_lines.append("grand_parent: Положення")
+    fm_lines.append(f"nav_order: {g.num}")
+    if amended_by_entries:
+        fm_lines.append("amended_by:")
+        for a in amended_by_entries:
+            scope = ""
+            line = f'  - {{ date: {a["date"]}, order: {a["order"]}, op: {a["op"]} }}'
+            fm_lines.append(line)
+    fm_lines.append("---")
+    fm_lines.append("")
+
+    body = []
+    body.append(f"# Глава {g.num}. {g.title}")
+    body.append("")
+    body.append("{% include chapter-context.html %}")
+    body.append("{% include amendment-history.html %}")
+    body.append("")
+
+    # Intro (між глава header і першим пунктом — рідкісно, але буває)
+    for line in g.intro_lines:
+        body.append(line)
+    if g.intro_lines:
+        body.append("")
+
+    # Punkty
+    for p in g.punkty:
+        anchor = "p" + p.num
+        body.append(f'<a id="{anchor}"></a>')
+        body.append(f"## {p.num}.")
+        body.append("")
+        # Об'єднуємо рядки в абзаци — лінії, розділені порожніми, стають окремими параграфами
+        text_block = "\n".join(p.text_lines)
+        # Прибираємо leading whitespace, нормалізуємо пробіли
+        text_block = re.sub(r"[ \t]+", " ", text_block)
+        # Розбиваємо на параграфи (порожні рядки)
+        paragraphs = re.split(r"\n{2,}", text_block.strip())
+        for para in paragraphs:
+            para = para.strip()
+            if para:
+                body.append(para)
+                body.append("")
+        # Маркери
+        for raw in p.markers:
+            body.append(render_marker_md(raw))
+            body.append("")
+
+    return "\n".join(fm_lines + body).rstrip() + "\n"
+
+
+def slug_for_glava(rozdil_num: int, glava_num: int) -> str:
+    if (rozdil_num, glava_num) in GLAVA_FILENAMES:
+        return GLAVA_FILENAMES[(rozdil_num, glava_num)]
+    return f"{glava_num:02d}-glava"
+
+
+# ──────────────────────────────────────────────────────────────────
+# CLI
+# ──────────────────────────────────────────────────────────────────
 
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
-    ap.add_argument("--html", help="Локальний HTML-файл")
-    ap.add_argument("--url", help="URL для fetch")
-    ap.add_argument("--chapter", help="«Розділ I Глава 3»")
-    ap.add_argument("--out", help="Output Markdown file")
-    ap.add_argument("--list", action="store_true", help="Перелічити всі знайдені секції")
-    ap.add_argument("--at", help="Дата для історичної редакції (YYYY-MM-DD)")
+    ap.add_argument("--pdf", help="Path to PDF")
+    ap.add_argument("--txt", help="Path to pre-extracted text (faster для re-run)")
+    ap.add_argument("--extract-only", help="Тільки витягти text у файл і вийти")
+    ap.add_argument("--only", help="Конкретна глава, формат 'rozdil.glava' (напр. '2.3')")
+    ap.add_argument("--dry-run", action="store_true", help="Не записувати файли, тільки звіт")
     args = ap.parse_args()
 
-    # Завантажуємо HTML
-    if args.html:
-        with open(args.html, "r", encoding="utf-8") as f:
-            html = f.read()
-    elif args.url:
-        url = args.url
-        if args.at:
-            # Конвертуємо YYYY-MM-DD у YYYYMMDD для rada.gov.ua/ed{date}/
-            date = args.at.replace("-", "")
-            url = f"{RADA_BASE}/ed{date}/print"
-        print(f"Fetching {url}...", file=sys.stderr)
-        html = fetch_html(url)
+    if args.pdf:
+        text = extract_text_from_pdf(args.pdf)
+        if args.extract_only:
+            Path(args.extract_only).write_text(text, encoding="utf-8")
+            print(f"Extracted {len(text)} chars → {args.extract_only}")
+            return 0
+    elif args.txt:
+        text = Path(args.txt).read_text(encoding="utf-8")
     else:
-        # Дефолт — спробувати локальний кеш або тягнути print
-        cache = Path("/tmp/nakaz-402.html")
-        if cache.exists():
-            html = cache.read_text(encoding="utf-8")
-        else:
-            url = f"{RADA_BASE}/print"
-            print(f"Fetching {url}...", file=sys.stderr)
-            html = fetch_html(url)
-            cache.write_text(html, encoding="utf-8")
+        ap.error("Вкажи --pdf або --txt")
 
-    soup = BeautifulSoup(html, "html.parser")
+    print(f"Текст: {len(text)} chars", file=sys.stderr)
+    glavas = parse_document(text)
+    print(f"Знайдено глав: {len(glavas)}", file=sys.stderr)
 
-    if args.list:
-        list_sections(soup)
-        return 0
-
-    if not args.chapter:
-        ap.error("Вкажи --chapter «Розділ X Глава N» або --list")
-
-    section = find_section(soup, args.chapter)
-    if not section:
-        sys.stderr.write(f"Секція «{args.chapter}» не знайдена. Запусти з --list щоб побачити всі.\n")
+    if not glavas:
+        print("ERROR: парсер не знайшов жодної глави. Текст-структура не відповідає очікуванням.", file=sys.stderr)
         return 1
 
-    md = section_to_markdown(section)
-    if args.out:
-        Path(args.out).write_text(md, encoding="utf-8")
-        print(f"Записано {args.out} ({len(md)} bytes)")
-    else:
-        sys.stdout.write(md)
+    # Фільтр
+    if args.only:
+        try:
+            r, g = args.only.split(".")
+            r, g = int(r), int(g)
+            glavas = {(r, g): glavas[(r, g)]} if (r, g) in glavas else {}
+        except Exception:
+            ap.error("--only формат rozdil.glava напр. 2.3")
+    if not glavas:
+        print(f"Глава {args.only} не знайдена", file=sys.stderr)
+        return 1
+
+    # Render + write
+    written = []
+    for (rn, gn), glava in sorted(glavas.items()):
+        slug = slug_for_glava(rn, gn)
+        outdir = REPO / "polozhennia" / ROZDIL_DIRS.get(rn, f"{rn:02d}-")
+        outdir.mkdir(parents=True, exist_ok=True)
+        # У старій файловій схемі для глав без явного slug ми використовуємо «{num:02d}-glava.md»
+        outpath = outdir / f"{slug}.md"
+        md = render_glava(glava)
+        if args.dry_run:
+            print(f"  [DRY] would write {outpath.relative_to(REPO)}  ({len(md)} chars, {len(glava.punkty)} пунктів)")
+            continue
+        outpath.write_text(md, encoding="utf-8")
+        written.append((outpath, len(glava.punkty), len(md)))
+
+    if not args.dry_run:
+        print(f"\nЗаписано {len(written)} файлів:")
+        for path, n_punkt, size in written:
+            print(f"  {path.relative_to(REPO)}  ({size} chars, {n_punkt} пунктів)")
     return 0
 
 
