@@ -80,11 +80,13 @@ def extract_text_from_pdf(path: str) -> str:
 # ──────────────────────────────────────────────────────────────────
 
 ROZDIL_RE   = re.compile(r"^([IVX]+)\.\s+(.+?)\s*$")
-GLAVA_RE    = re.compile(r"^(\d+)\.\s+([А-ЯІЇЄҐ][^.]{3,150})\s*$")  # перше слово з великої, без крапки в кінці
+GLAVA_RE    = re.compile(r"^(\d+)\.\s+([А-ЯІЇЄҐ].{2,250})\s*$")  # short line starting with N. + Capital
 PUNKT_RE    = re.compile(r"^(\d+\.\d+(?:\.\d+)?)\.\s+(.+)$")
-SUBPUNKT_RE = re.compile(r"^([а-яіїєґ])\)\s+(.+)$")   # «а) текст»
+SUBPUNKT_RE = re.compile(r"^([а-яіїєґ])\)\s+(.+)$")
 MARKER_OPEN = re.compile(r"^\{")
 MARKER_CLOSE = re.compile(r"\}\s*$")
+DODATOK_RE  = re.compile(r"^Додаток(?:\s+\d+)?\s*$|^ДОДАТКИ?\s*$")  # тільки standalone "Додаток N" як stop
+MAX_GLAVA_PER_ROZDIL = 23  # cap — не приймаємо main-text numbered items типу «1. Затвердити...» як главу
 
 
 @dataclass
@@ -104,25 +106,28 @@ class Glava:
     raw_markers: list = field(default_factory=list)
 
 
-def is_glava_header(line: str, prev_was_rozdil_or_blank: bool) -> tuple[int, str] | None:
-    """Розпізнаємо «1. Загальні положення» — короткий рядок, велика буква, без додаткових крапок.
+def is_glava_header(line: str, last_glava_num: int) -> tuple[int, str] | None:
+    """«N. Назва глави» — монотонне зростання N від попередньої глави.
 
-    Контекст: «глава» завжди йде після розділу або після порожнього рядка (між главами).
-    Також ми очікуємо <100 символів — щоб не сплутати з пунктом наказу типу «1. Затвердити Положення...».
+    Сильний signal: N > last_glava_num, sequential (gap ≤ 5), capitalized title.
+    Не вимагаємо blank-line перед — глави часто впритул після пункт-контенту.
     """
     m = GLAVA_RE.match(line)
     if not m:
         return None
-    if not prev_was_rozdil_or_blank:
+    num = int(m.group(1))
+    if num <= last_glava_num:
         return None
-    title = m.group(2).strip()
-    # Виключаємо false-positive: якщо в рядку є коми/двокрапки — не глава
-    if "," in title or ":" in title:
+    if num > MAX_GLAVA_PER_ROZDIL:
         return None
-    # Назва глави типово до 80 символів
-    if len(title) > 100:
+    if last_glava_num > 0 and num > last_glava_num + 5:
         return None
-    return int(m.group(1)), title
+    title = m.group(2).strip().rstrip(',')
+    if len(title) > 250:
+        return None
+    if not title or not (title[0].isupper() or title[0] in 'ІЇЄҐ'):
+        return None
+    return num, title
 
 
 def parse_document(text: str) -> dict:
@@ -130,6 +135,7 @@ def parse_document(text: str) -> dict:
     lines = text.split("\n")
     glavas: dict[tuple[int, int], Glava] = {}
     current_rozdil = 0
+    last_glava_per_rozdil: dict[int, int] = {}  # rozdil_num → last detected glava_num
     current_glava: Glava | None = None
     current_punkt: Punkt | None = None
     in_marker = False
@@ -183,28 +189,42 @@ def parse_document(text: str) -> dict:
             prev_was_rozdil_or_blank = True
             continue
 
-        # Розділ header
+        # Stop-marker для глав: «Додаток N» / «ДОДАТКИ» / «Розклад хвороб»
+        # — після цих рядків починаються додатки, не глави Положення
+        if DODATOK_RE.match(stripped) and current_rozdil > 0:
+            current_glava = None
+            current_punkt = None
+            current_rozdil = -1  # disable further glava/rozdil detection
+            continue
+
+        # Розділ header — приймаємо лише I і II (III виключено наказом № 602/2017,
+        # подальші згадки "III." у тексті — це класи Розкладу хвороб у Дотатках)
         m = ROZDIL_RE.match(stripped)
-        if m and m.group(1) in ROMAN and len(stripped) < 100:
-            # Це може бути або справжній розділ, або частина тексту
-            # Перевіряємо: чи це коротка назва типу "I. Основи..."
+        if m and m.group(1) in ("I", "II") and len(stripped) < 100:
             title = m.group(2).strip()
             if not any(p in title for p in ['.', ',', ':']) and len(title) < 80:
-                current_rozdil = ROMAN[m.group(1)]
-                current_glava = None
+                new_rozdil = ROMAN[m.group(1)]
+                # Тільки якщо new > current — щоб не reset'ити на повторні згадки
+                if new_rozdil > current_rozdil:
+                    current_rozdil = new_rozdil
+                    last_glava_per_rozdil.setdefault(current_rozdil, 0)
+                    current_glava = None
+                    current_punkt = None
+                    prev_was_rozdil_or_blank = True
+                    continue
+
+        # Глава header (потрібно current_rozdil > 0 щоб відкинути numbered items з преамбули)
+        if current_rozdil > 0:
+            last_n = last_glava_per_rozdil.get(current_rozdil, 0)
+            gh = is_glava_header(stripped, last_n)
+            if gh:
+                num, title = gh
+                current_glava = Glava(rozdil_num=current_rozdil, num=num, title=title)
+                glavas[(current_rozdil, num)] = current_glava
+                last_glava_per_rozdil[current_rozdil] = num
                 current_punkt = None
                 prev_was_rozdil_or_blank = True
                 continue
-
-        # Глава header
-        gh = is_glava_header(stripped, prev_was_rozdil_or_blank)
-        if gh and current_rozdil > 0:
-            num, title = gh
-            current_glava = Glava(rozdil_num=current_rozdil, num=num, title=title)
-            glavas[(current_rozdil, num)] = current_glava
-            current_punkt = None
-            prev_was_rozdil_or_blank = True
-            continue
 
         # Punkt header
         pm = PUNKT_RE.match(stripped)
