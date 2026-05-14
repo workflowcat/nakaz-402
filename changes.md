@@ -16,6 +16,14 @@ permalink: /changes/
 {% assign affects_total = 0 %}
 {% for a in amendments %}{% if a.affects %}{% assign affects_total = affects_total | plus: a.affects.size %}{% endif %}{% endfor %}
 
+<section class="heatmap-section">
+  <div class="heatmap-head">
+    <h2 class="heatmap-title">Карта активності</h2>
+    <p class="heatmap-hint">Інтенсивність кольору ∝ кількість записів у <code>amendments.yaml</code>, що чіпають кожну главу. Hover — деталі. Click — перейти.</p>
+  </div>
+  <div id="heatmap-grid"></div>
+</section>
+
 <div class="stats">
   <div class="stat">
     <span class="value">{{ total }}</span>
@@ -84,6 +92,96 @@ permalink: /changes/
 </div>
 
 <script>
+// ── Heatmap of amendment density per глава ──
+(function() {
+  const AMD = {{ site.data.amendments.amendments | jsonify }};
+  const grid = document.getElementById('heatmap-grid');
+  if (!grid) return;
+
+  // Aggregate за главами + наказом
+  const counts = {};
+  AMD.forEach(a => {
+    (a.affects || []).forEach(aff => {
+      const m = aff.id.match(/^(polozhennia\.r\d+\.gl\d+)/);
+      if (m) counts[m[1]] = (counts[m[1]] || 0) + 1;
+      else if (aff.id.startsWith('nakaz')) counts['nakaz'] = (counts['nakaz'] || 0) + 1;
+    });
+  });
+
+  const BASE = '{{ "/" | relative_url }}'.replace(/\/$/, '');
+  const URL_FOR = {
+    'polozhennia.r1.gl1': BASE + '/polozhennia/01-osnovy-organizatsii/01-zagalni-polozhennia/',
+    'polozhennia.r1.gl2': BASE + '/polozhennia/01-osnovy-organizatsii/02-organy-vle/',
+    'polozhennia.r1.gl3': BASE + '/polozhennia/01-osnovy-organizatsii/03-rozhliad-zvernen/',
+    'polozhennia.r2.gl1': BASE + '/polozhennia/02-medychnyi-oglyad/01-zagalni-polozhennia/',
+  };
+  for (let g = 2; g <= 23; g++) {
+    const padded = ('0' + g).slice(-2);
+    URL_FOR[`polozhennia.r2.gl${g}`] = `${BASE}/polozhennia/02-medychnyi-oglyad/${padded}-glava/`;
+  }
+
+  // Знаходимо max для нормалізації кольору
+  const max = Math.max(1, ...Object.values(counts));
+
+  function colorFor(count) {
+    if (count === 0) return 'var(--bg-subtle)';
+    const ratio = Math.min(1, count / max);
+    // інтенсивність від 0.12 до 0.95
+    const opacity = 0.18 + ratio * 0.72;
+    return `rgba(114, 83, 237, ${opacity.toFixed(2)})`;
+  }
+
+  function renderRow(label, rNum, glavasCount) {
+    const row = document.createElement('div');
+    row.className = 'hm-row';
+    const lbl = document.createElement('div');
+    lbl.className = 'hm-label';
+    lbl.textContent = label;
+    row.appendChild(lbl);
+    const cells = document.createElement('div');
+    cells.className = 'hm-cells';
+    for (let g = 1; g <= glavasCount; g++) {
+      const id = `polozhennia.r${rNum}.gl${g}`;
+      const count = counts[id] || 0;
+      const cell = document.createElement('a');
+      cell.className = 'hm-cell';
+      cell.href = URL_FOR[id] || '#';
+      cell.style.background = colorFor(count);
+      cell.title = `Розд. ${rNum === 1 ? 'I' : 'II'} · Глава ${g} · ${count} амендмент${ukAmendSuffix(count)}`;
+      cell.innerHTML = `<span class="hm-num">${g}</span>${count > 0 ? `<span class="hm-count">${count}</span>` : ''}`;
+      if (count > max * 0.5) cell.classList.add('hm-light-fg');
+      cells.appendChild(cell);
+    }
+    row.appendChild(cells);
+    grid.appendChild(row);
+  }
+
+  function ukAmendSuffix(n) {
+    const m100 = n % 100, m10 = n % 10;
+    if (m100 >= 11 && m100 <= 14) return 'ів';
+    if (m10 === 1) return '';
+    if (m10 >= 2 && m10 <= 4) return 'и';
+    return 'ів';
+  }
+
+  renderRow('Розділ I', 1, 3);
+  renderRow('Розділ II', 2, 23);
+
+  // Легенда
+  const legend = document.createElement('div');
+  legend.className = 'hm-legend';
+  legend.innerHTML = `
+    <span class="hm-leg-label">Менше</span>
+    <span class="hm-leg-cell" style="background: var(--bg-subtle)"></span>
+    <span class="hm-leg-cell" style="background: rgba(114, 83, 237, 0.3)"></span>
+    <span class="hm-leg-cell" style="background: rgba(114, 83, 237, 0.55)"></span>
+    <span class="hm-leg-cell" style="background: rgba(114, 83, 237, 0.8)"></span>
+    <span class="hm-leg-label">Більше (макс: ${max})</span>
+  `;
+  grid.appendChild(legend);
+})();
+
+// ── Existing filter logic ──
 (function() {
   const ops = new Set(['insert', 'redaction', 'edit', 'repeal']);
   let txt = '';

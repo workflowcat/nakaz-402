@@ -869,6 +869,118 @@ kbd {
 
 
 /* =================================================================
+   HEATMAP — карта активності за главами
+   ================================================================= */
+
+.heatmap-section {
+  margin: var(--sp-5) 0 var(--sp-6);
+  padding: var(--sp-4) var(--sp-5) var(--sp-5);
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+}
+.heatmap-head { margin-bottom: var(--sp-4); }
+.heatmap-title {
+  margin: 0 !important;
+  font-size: 1.15rem !important;
+  font-weight: 700;
+  border-top: none !important;
+  padding-top: 0 !important;
+}
+.heatmap-title::before { display: none !important; }
+.heatmap-hint {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  margin: 0.3rem 0 0;
+  line-height: 1.45;
+}
+.heatmap-hint code { font-size: 0.85em; padding: 1px 5px; background: var(--bg-subtle); border-radius: 3px; }
+
+.hm-row {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  margin: var(--sp-2) 0;
+}
+.hm-label {
+  flex-shrink: 0;
+  width: 80px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  letter-spacing: -0.005em;
+  font-feature-settings: "tnum" 1;
+}
+.hm-cells {
+  flex: 1;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(38px, 1fr));
+  gap: 3px;
+}
+.hm-cell {
+  position: relative;
+  aspect-ratio: 1 / 1;
+  min-height: 38px;
+  border-radius: var(--r-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  color: var(--text);
+  font-size: 0.78rem;
+  font-weight: 500;
+  border: 1px solid transparent;
+  transition: transform 0.1s, border-color 0.12s, box-shadow 0.12s;
+  cursor: pointer;
+  font-feature-settings: "tnum" 1;
+}
+.hm-cell:hover {
+  transform: scale(1.08);
+  border-color: var(--accent);
+  box-shadow: var(--shadow-md);
+  z-index: 2;
+  color: var(--text);
+}
+.hm-cell.hm-light-fg { color: white; }
+.hm-cell.hm-light-fg:hover { color: white; }
+.hm-cell .hm-num {
+  position: absolute;
+  top: 3px;
+  left: 5px;
+  font-size: 0.65rem;
+  opacity: 0.7;
+  font-weight: 400;
+}
+.hm-cell .hm-count {
+  font-size: 0.92rem;
+  font-weight: 700;
+  font-family: var(--font-mono);
+}
+
+.hm-legend {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: var(--sp-4);
+  font-size: 0.74rem;
+  color: var(--text-muted);
+}
+.hm-leg-label { padding: 0 0.4rem; }
+.hm-leg-cell {
+  display: inline-block;
+  width: 22px;
+  height: 14px;
+  border-radius: 3px;
+  border: 1px solid var(--border);
+}
+
+@media (max-width: 640px) {
+  .hm-row { flex-direction: column; align-items: stretch; gap: 0.3rem; }
+  .hm-label { width: auto; }
+}
+
+
+/* =================================================================
    AMENDMENT CARDS (dashboard & mini-feed)
    ================================================================= */
 
