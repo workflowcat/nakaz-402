@@ -94,6 +94,33 @@ export const GET: APIRoute = async ({ site }) => {
           responses: { '200': { description: 'OK', content: { 'application/json': { schema: { $ref: '#/components/schemas/DraftList' } } } } },
         },
       },
+      '/api/rh.json': {
+        get: {
+          summary: 'List of Розклад хвороб articles (stattia level)',
+          operationId: 'listRh',
+          responses: { '200': { description: 'OK', content: { 'application/json': { schema: { $ref: '#/components/schemas/RhList' } } } } },
+        },
+      },
+      '/api/rh/{stattia}.json': {
+        get: {
+          summary: 'One Розклад хвороб article with all punkty + category matrix',
+          operationId: 'getRhStattia',
+          parameters: [
+            { name: 'stattia', in: 'path', required: true, schema: { type: 'string', pattern: '^\\d{3}$' }, example: '042' },
+          ],
+          responses: {
+            '200': { description: 'OK', content: { 'application/json': { schema: { $ref: '#/components/schemas/RhStattia' } } } },
+            '404': { description: 'Unknown stattia' },
+          },
+        },
+      },
+      '/api/rh/meta.json': {
+        get: {
+          summary: 'РХ metadata: categories with severity order, grafy (contingents), klasy (ICD groups), combination rule',
+          operationId: 'getRhMeta',
+          responses: { '200': { description: 'OK', content: { 'application/json': { schema: { $ref: '#/components/schemas/RhMeta' } } } } },
+        },
+      },
       '/api/drafts/{slug}.json': {
         get: {
           summary: 'Single draft with operations, lint findings, and generated formal citation text',
@@ -293,6 +320,96 @@ export const GET: APIRoute = async ({ site }) => {
               },
             },
           ],
+        },
+        RhPunkt: {
+          type: 'object',
+          required: ['id', 'opys', 'grafy'],
+          properties: {
+            id: { type: 'string', example: 'а' },
+            opys: { type: 'string' },
+            grafy: {
+              type: 'object',
+              description: 'Map of contingent code → fitness category code.',
+              additionalProperties: { type: 'string', example: 'Б-3' },
+            },
+          },
+        },
+        RhStattiaSummary: {
+          type: 'object',
+          required: ['id', 'stattia', 'klas', 'nazva'],
+          properties: {
+            id: { type: 'string', example: 'dodatok.1.stattia.42' },
+            stattia: { type: 'integer', example: 42 },
+            klas: { type: 'string', example: 'I00-I99' },
+            nazva: { type: 'string' },
+            short_nazva: { type: 'string' },
+            punkty_count: { type: 'integer' },
+            punkty_ids: { type: 'array', items: { type: 'string' } },
+            links: { type: 'object', additionalProperties: { type: 'string' } },
+          },
+        },
+        RhList: {
+          type: 'object',
+          properties: {
+            count: { type: 'integer' },
+            items: { type: 'array', items: { $ref: '#/components/schemas/RhStattiaSummary' } },
+          },
+        },
+        RhStattia: {
+          allOf: [
+            { $ref: '#/components/schemas/RhStattiaSummary' },
+            {
+              type: 'object',
+              properties: {
+                status: { type: 'string' },
+                source: { type: ['string', 'null'] },
+                punkty: { type: 'array', items: { $ref: '#/components/schemas/RhPunkt' } },
+                last_amended: { type: ['object', 'null'] },
+                references: { type: ['object', 'null'] },
+              },
+            },
+          ],
+        },
+        RhCategory: {
+          type: 'object',
+          properties: {
+            code: { type: 'string', example: 'Б-3' },
+            description: { type: 'string' },
+            severity: { type: ['integer', 'null'], description: 'Higher = more restrictive. Use to combine multiple diagnoses worst-wins.' },
+          },
+        },
+        RhGrafa: {
+          type: 'object',
+          properties: {
+            code: { type: 'string', example: 'I' },
+            label: { type: 'string', example: 'Графа I' },
+            audience: { type: 'string', example: 'Призовники' },
+            notes: { type: 'string' },
+          },
+        },
+        RhKlas: {
+          type: 'object',
+          properties: {
+            id: { type: 'string', example: 'I00-I99' },
+            nazva: { type: 'string' },
+            statti_range: { type: 'string' },
+          },
+        },
+        RhMeta: {
+          type: 'object',
+          properties: {
+            categories: { type: 'array', items: { $ref: '#/components/schemas/RhCategory' } },
+            grafy: { type: 'array', items: { $ref: '#/components/schemas/RhGrafa' } },
+            klasy: { type: 'array', items: { $ref: '#/components/schemas/RhKlas' } },
+            combination_rule: {
+              type: 'object',
+              properties: {
+                type: { type: 'string', example: 'worst-wins' },
+                description: { type: 'string' },
+                severity_order: { type: 'array', items: { type: 'string' } },
+              },
+            },
+          },
         },
         Glossary: {
           type: 'object',
