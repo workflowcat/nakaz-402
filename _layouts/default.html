@@ -44,7 +44,7 @@
       {%- assign url = page.url -%}
       <a href="{{ '/changes/' | relative_url }}" class="nav-link {% if url contains '/changes' %}is-active{% endif %}">Зміни</a>
       <a href="{{ '/diff/' | relative_url }}" class="nav-link {% if url contains '/diff' %}is-active{% endif %}">Diff</a>
-      <a href="{{ '/nakaz/' | relative_url }}" class="nav-link {% if url == '/nakaz/' or url == '/nakaz.html' %}is-active{% endif %}">Наказ</a>
+      <a href="{{ '/nakaz/' | relative_url }}" class="nav-link {% if url == '/nakaz/' %}is-active{% endif %}">Наказ</a>
       <a href="{{ '/polozhennia/' | relative_url }}" class="nav-link {% if url contains '/polozhennia' %}is-active{% endif %}">Положення</a>
       <a href="{{ '/dodatky/' | relative_url }}" class="nav-link {% if url contains '/dodatky' %}is-active{% endif %}">Додатки</a>
       <a href="{{ '/examples/drafts/' | relative_url }}" class="nav-link {% if url contains '/drafts' %}is-active{% endif %}">DOCX</a>

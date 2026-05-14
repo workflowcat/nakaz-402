@@ -657,11 +657,11 @@ amended_by:
 > ([z0616-24](https://zakon.rada.gov.ua/laws/show/z0616-24))}*
 
 <nav class="page-nav" aria-label="Сусідні глави">
-  <a class="pn-prev" href="{{ '/polozhennia/01-osnovy-organizatsii/01-zagalni-polozhennia.html' | relative_url }}">
+  <a class="pn-prev" href="{{ '/polozhennia/01-osnovy-organizatsii/01-zagalni-polozhennia/' | relative_url }}">
     <span class="pn-dir">← Назад</span>
     Глава 1. Загальні положення
   </a>
-  <a class="pn-next" href="{{ '/polozhennia/01-osnovy-organizatsii/03-rozhliad-zvernen.html' | relative_url }}">
+  <a class="pn-next" href="{{ '/polozhennia/01-osnovy-organizatsii/03-rozhliad-zvernen/' | relative_url }}">
     <span class="pn-dir">Далі →</span>
     Глава 3. Розгляд звернень
   </a>

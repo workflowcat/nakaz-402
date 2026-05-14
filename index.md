@@ -17,7 +17,7 @@ permalink: /
 </p>
 <div class="hero-cta">
   <a class="primary" href="{{ '/changes/' | relative_url }}">Усі зміни →</a>
-  <a href="{{ '/nakaz.html' | relative_url }}">Прочитати наказ</a>
+  <a href="{{ '/nakaz/' | relative_url }}">Прочитати наказ</a>
   <a href="{{ '/examples/drafts/' | relative_url }}">Зразки DOCX</a>
   <a class="ghost" href="https://github.com/workflowcat/nakaz-402" target="_blank" rel="noopener">GitHub ↗</a>
 </div>

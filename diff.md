@@ -94,11 +94,11 @@ permalink: /diff/
 
   // Маппінг id → шлях до сторінки глави, в якій лежить пункт
   const ID_TO_PAGE = {
-    'polozhennia.r1.gl1': '/polozhennia/01-osnovy-organizatsii/01-zagalni-polozhennia.html',
-    'polozhennia.r1.gl2': '/polozhennia/01-osnovy-organizatsii/02-organy-vle.html',
-    'polozhennia.r1.gl3': '/polozhennia/01-osnovy-organizatsii/03-rozhliad-zvernen.html',
-    'polozhennia.r2.gl1': '/polozhennia/02-medychnyi-oglyad/01-zagalni-polozhennia.html',
-    'nakaz': '/nakaz.html',
+    'polozhennia.r1.gl1': '/polozhennia/01-osnovy-organizatsii/01-zagalni-polozhennia/',
+    'polozhennia.r1.gl2': '/polozhennia/01-osnovy-organizatsii/02-organy-vle/',
+    'polozhennia.r1.gl3': '/polozhennia/01-osnovy-organizatsii/03-rozhliad-zvernen/',
+    'polozhennia.r2.gl1': '/polozhennia/02-medychnyi-oglyad/01-zagalni-polozhennia/',
+    'nakaz': '/nakaz/',
   };
   const BASE = '{{ "/" | relative_url }}';
 

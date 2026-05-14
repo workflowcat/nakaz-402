@@ -195,7 +195,7 @@ amended_by:
 
 <nav class="page-nav" aria-label="Сусідні глави">
   <span class="pn-empty"></span>
-  <a class="pn-next" href="{{ '/polozhennia/01-osnovy-organizatsii/02-organy-vle.html' | relative_url }}">
+  <a class="pn-next" href="{{ '/polozhennia/01-osnovy-organizatsii/02-organy-vle/' | relative_url }}">
     <span class="pn-dir">Далі →</span>
     Глава 2. Органи ВЛЕ
   </a>
