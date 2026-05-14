@@ -7,7 +7,7 @@ permalink: /
 ---
 
 <div class="hero">
-<p class="hero-eyebrow">Наказ МОУ № 402 · 14.08.2008 · z1109-08</p>
+<p class="hero-eyebrow">Наказ МОУ № 402 · 14.08.2008</p>
 <h1>Військово-лікарська експертиза як дані, а не як docx</h1>
 <p class="hero-lede">
 Той самий нормативний акт, але кожен пункт має стабільний id, кожна правка
@@ -15,10 +15,10 @@ permalink: /
 скриптом.
 </p>
 <div class="hero-cta">
-  <a class="primary" href="{{ '/changes/' | relative_url }}">📊 Усі зміни</a>
+  <a class="primary" href="{{ '/changes/' | relative_url }}">Усі зміни →</a>
   <a href="{{ '/nakaz.html' | relative_url }}">Прочитати наказ</a>
-  <a href="{{ '/examples/drafts/' | relative_url }}">Зразки DOCX-драфтів</a>
-  <a href="https://github.com/workflowcat/nakaz-402" target="_blank" rel="noopener">GitHub ↗</a>
+  <a href="{{ '/examples/drafts/' | relative_url }}">Зразки DOCX</a>
+  <a class="ghost" href="https://github.com/workflowcat/nakaz-402" target="_blank" rel="noopener">GitHub ↗</a>
 </div>
 </div>
 
@@ -51,11 +51,11 @@ permalink: /
   </div>
 </div>
 
-## Останні 5 амендментів
+## Останні зміни
 
 <div class="mini-feed">
-{% assign last_five = amendments | slice: 0, 5 %}
-{% for a in last_five %}
+{% assign last_three = amendments | slice: 0, 3 %}
+{% for a in last_three %}
 <div class="amendment-card" data-year="{{ a.signed_at | date: '%Y' }}">
   <div class="amendment-head">
     <span class="amendment-date">{{ a.signed_at | date: "%d.%m.%Y" }}</span>
@@ -80,22 +80,32 @@ permalink: /
 
 ## Що це дає на практиці
 
-**Юрист** хоче подивитись, що змінив наказ № 262 від 2024. Замість порівнювати дві pdf — відкриває [/changes/](/changes/), фільтрує, бачить chips з конкретними `id` зачеплених пунктів і одним кліком переходить.
+<div class="use-cases">
+<div class="uc">
+<div class="uc-role">Юрист</div>
+<div class="uc-text">Хоче подивитись, що змінив наказ № 262 від 2024. Замість порівнювати дві pdf — відкриває <a href="{{ '/changes/' | relative_url }}">/changes/</a>, фільтрує, бачить chips з конкретними <code>id</code> зачеплених пунктів і одним кліком переходить.</div>
+</div>
 
-**Розробник** хоче вбудувати «калькулятор придатності» в HR-систему. Робить `GET /api/dodatok-1/stattia-42.json` — і у відповіді машино-читабельна таблиця діагноз → категорія за всіма графами.
+<div class="uc">
+<div class="uc-role">Розробник</div>
+<div class="uc-text">Вбудовує «калькулятор придатності» в HR-систему. Робить <code>GET /api/dodatok-1/stattia-42.json</code> — і у відповіді машино-читабельна таблиця діагноз → категорія за всіма графами.</div>
+</div>
 
-**Нормотворець** хоче скласти проєкт нового наказу-зміни. Запускає `make draft AMENDMENT=z0329-25` — отримує готовий .docx із заповненою порівняльною таблицею, залишається тільки вписати новий текст.
+<div class="uc">
+<div class="uc-role">Нормотворець</div>
+<div class="uc-text">Складає проєкт нового наказу-зміни. Запускає <code>make draft AMENDMENT=z0329-25</code> — отримує готовий .docx із заповненою порівняльною таблицею, залишається тільки вписати новий текст.</div>
+</div>
 
-**Контриб'ютор** при виході справжнього наказу-зміни: один PR — оновлює YAML, лінтер перевіряє узгодженість, CHANGELOG регенерується автоматично. Все.
-
----
+<div class="uc">
+<div class="uc-role">Контриб'ютор</div>
+<div class="uc-text">При виході справжнього наказу-зміни — один PR оновлює YAML, лінтер перевіряє узгодженість, CHANGELOG регенерується автоматично.</div>
+</div>
+</div>
 
 ## Як це працює
 
-Кожен пункт = окремий файл з YAML-frontmatter (`id`, `status`, `amended_by`). Глава Положення = один .md з якорями на пункти. Розклад хвороб = YAML по статті. Метадані амендментів = `meta/amendments.yaml`. Сайт, CHANGELOG, JSON-API, DOCX-драфти і калькулятор — це **функції** від цих даних.
+Кожен пункт = окремий файл з YAML-frontmatter (`id`, `status`, `amended_by`). Глава Положення = один .md з якорями на пункти. Розклад хвороб = YAML по статті. Метадані амендментів — у [`meta/amendments.yaml`](https://github.com/workflowcat/nakaz-402/blob/main/meta/amendments.yaml). Сайт, CHANGELOG, JSON-API, DOCX-драфти і калькулятор — **функції** від цих даних.
 
 [Тур по реальному амендменту →]({{ '/docs/walkthrough/' | relative_url }})
 
-## Юридичне джерело
-
-Авторитетним залишається текст на [zakon.rada.gov.ua](https://zakon.rada.gov.ua/laws/show/z1109-08). Цей репозиторій — інженерна реплікація.
+<p class="footer-source">Авторитетним залишається текст на <a href="https://zakon.rada.gov.ua/laws/show/z1109-08">zakon.rada.gov.ua</a>. Цей репозиторій — інженерна реплікація під <a href="https://github.com/workflowcat/nakaz-402/blob/main/LICENSE">CC0</a>.</p>
