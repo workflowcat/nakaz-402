@@ -160,6 +160,133 @@
 }
 
 // ──────────────────────────────────────────────────────────────────
+// Cross-reference links (auto-linker) і flash на переході
+// ──────────────────────────────────────────────────────────────────
+
+.main-content a.xref {
+  color: var(--accent);
+  text-decoration: none;
+  border-bottom: 1px dotted var(--accent-soft);
+  transition: all 0.12s;
+  white-space: nowrap;
+}
+.main-content a.xref:hover {
+  border-bottom-style: solid;
+  background: var(--accent-bg);
+}
+
+// Flash на цільовому h2/h3 коли клікнули по якорю
+@keyframes xref-flash-anim {
+  0%   { background: var(--op-redaction-bg); }
+  60%  { background: var(--op-redaction-bg); }
+  100% { background: transparent; }
+}
+.xref-flash {
+  animation: xref-flash-anim 1.8s ease-out forwards;
+  border-radius: 4px;
+  margin-left: -0.4rem !important;
+  padding-left: 0.4rem !important;
+  margin-right: -0.4rem !important;
+  padding-right: 0.4rem !important;
+}
+
+// ──────────────────────────────────────────────────────────────────
+// Chapter mini-TOC — collapsible інлайн блок угорі сторінки
+// ──────────────────────────────────────────────────────────────────
+
+.chapter-toc-inline {
+  margin: 0.5rem 0 1.5rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface);
+  font-size: 0.85rem;
+
+  > summary {
+    padding: 0.55rem 0.9rem;
+    cursor: pointer;
+    list-style: none;
+    user-select: none;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 500;
+    font-size: 0.88rem;
+  }
+  > summary::-webkit-details-marker { display: none; }
+  > summary::after {
+    content: "▾";
+    margin-left: auto;
+    font-size: 0.75rem;
+    opacity: 0.55;
+    transition: transform 0.15s;
+  }
+  &[open] > summary::after { transform: rotate(180deg); }
+
+  .ctoc-count {
+    margin-left: 0.3rem;
+    font-size: 0.7rem;
+    padding: 1px 7px;
+    border-radius: 8px;
+    background: var(--accent-bg);
+    color: var(--accent);
+    font-family: var(--mono-font-family, monospace);
+    font-weight: 500;
+  }
+
+  ul {
+    list-style: none;
+    padding: 0.25rem 0.9rem 0.85rem;
+    margin: 0;
+    border-top: 1px solid var(--border);
+    columns: 2;
+    column-gap: 1.5rem;
+  }
+  li {
+    margin: 0 0 0.15rem;
+    line-height: 1.45;
+    break-inside: avoid;
+  }
+  li.ctoc-h3 { padding-left: 1rem; font-size: 0.8rem; opacity: 0.85; }
+  li a {
+    color: var(--body-text-color);
+    text-decoration: none;
+    display: block;
+    padding: 2px 6px 2px 8px;
+    border-radius: 3px;
+    border-left: 2px solid transparent;
+    transition: all 0.12s;
+    opacity: 0.8;
+  }
+  li a:hover {
+    opacity: 1;
+    background: var(--body-background-color);
+    border-left-color: var(--accent-soft);
+  }
+  li a.active {
+    opacity: 1;
+    color: var(--accent);
+    border-left-color: var(--accent);
+    background: var(--body-background-color);
+    font-weight: 500;
+  }
+}
+
+@media (max-width: 640px) {
+  .chapter-toc-inline ul { columns: 1; }
+}
+
+// ──────────────────────────────────────────────────────────────────
+// Punkt h2 — крупні номери як акцент
+// ──────────────────────────────────────────────────────────────────
+
+// Тільки в main-content, тільки h2 у форматі "N.M." або "N.M.K"
+.main-content h2 {
+  // Розпізнаємо "1.4." на початку і виділяємо
+  // (CSS не може парсити текст, але ми можемо ствилити кращу типографіку взагалі)
+  font-variant-numeric: tabular-nums;
+}
+
+// ──────────────────────────────────────────────────────────────────
 // Загальна типографіка контенту
 // ──────────────────────────────────────────────────────────────────
 

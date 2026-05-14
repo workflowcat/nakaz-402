@@ -152,6 +152,165 @@
   else run();
 })();
 
+// ── Auto-link внутрішніх посилань на пункти ──
+// Шукає в тексті патерни типу "пунктом 1.2", "у пункті 2.5", "за главою 2"
+// і робить їх клікабельними, якщо в цій же сторінці є відповідний якір.
+(function() {
+  function run() {
+    const main = document.querySelector('.main-content');
+    if (!main) return;
+    // Збираємо всі наявні якорі p1.1, p2.5 тощо
+    const knownAnchors = new Set();
+    main.querySelectorAll('a[id^="p"]').forEach(a => knownAnchors.add(a.id.slice(1)));
+    if (knownAnchors.size === 0) return;
+
+    // Регекс: «пункт», «у пункті», «за пунктом», «п.»
+    // — Ukrainian inflections + numeric pattern N or N.M or N.M.K
+    const PUNKT_RE = /\b(пункт(?:ом|у|а|і|и|ів)?|п\.)\s*(\d+(?:\.\d+){0,2})/g;
+
+    const SKIP = new Set(['A','ABBR','CODE','PRE','SCRIPT','STYLE','BUTTON','SUMMARY']);
+    function inside(node) {
+      let p = node.parentElement;
+      while (p && p !== main) {
+        if (SKIP.has(p.tagName)) return true;
+        if (p.classList && (p.classList.contains('amend-history') || p.classList.contains('chapter-context'))) return true;
+        p = p.parentElement;
+      }
+      return false;
+    }
+
+    const walker = document.createTreeWalker(main, NodeFilter.SHOW_TEXT);
+    const nodes = [];
+    let n;
+    while ((n = walker.nextNode())) nodes.push(n);
+
+    nodes.forEach(node => {
+      if (inside(node)) return;
+      const text = node.nodeValue;
+      if (!text || text.length < 5) return;
+      PUNKT_RE.lastIndex = 0;
+      if (!PUNKT_RE.test(text)) return;
+      PUNKT_RE.lastIndex = 0;
+
+      const frag = document.createDocumentFragment();
+      let last = 0, m;
+      let replaced = false;
+      while ((m = PUNKT_RE.exec(text)) !== null) {
+        const punktNum = m[2];
+        if (!knownAnchors.has(punktNum)) continue;
+        if (m.index > last) frag.appendChild(document.createTextNode(text.slice(last, m.index)));
+        const a = document.createElement('a');
+        a.href = '#p' + punktNum;
+        a.className = 'xref';
+        a.title = 'Перейти до пункту ' + punktNum;
+        a.textContent = m[0];
+        frag.appendChild(a);
+        last = m.index + m[0].length;
+        replaced = true;
+      }
+      if (!replaced) return;
+      if (last < text.length) frag.appendChild(document.createTextNode(text.slice(last)));
+      node.parentNode.replaceChild(frag, node);
+    });
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', run);
+  else run();
+})();
+
+// ── Chapter mini-TOC ──
+// Будує collapsible TOC угорі сторінки + (на великих екранах) також
+// плаваючу sticky-панель справа всередині main-content.
+(function() {
+  function run() {
+    const main = document.querySelector('.main-content');
+    if (!main) return;
+    const anchors = main.querySelectorAll('a[id^="p"]');
+    if (anchors.length < 3) return;
+
+    const items = [];
+    anchors.forEach(a => {
+      const id = a.id;
+      let next = a.nextElementSibling;
+      while (next && !/^H[2-4]$/.test(next.tagName || '')) {
+        next = next.nextElementSibling;
+        if (!next || next.classList?.contains('amend-history')) break;
+      }
+      if (!next || !/^H[2-4]$/.test(next.tagName || '')) {
+        const parent = a.parentElement;
+        if (parent && /^H[2-4]$/.test(parent.tagName)) next = parent;
+      }
+      const text = next ? next.textContent.replace(/^\s*\W*\s*/, '').trim() : id;
+      const level = next && next.tagName === 'H3' ? 'h3' : 'h2';
+      items.push({ id, text, level });
+    });
+
+    if (items.length === 0) return;
+
+    // Inline collapsible TOC угорі сторінки
+    const inline = document.createElement('details');
+    inline.className = 'chapter-toc-inline no-glossary';
+    inline.innerHTML = `
+      <summary>📍 Пункти в цій главі <span class="ctoc-count">${items.length}</span></summary>
+      <ul>
+        ${items.map(i => `<li class="ctoc-${i.level}"><a href="#${i.id}">${i.text}</a></li>`).join('')}
+      </ul>
+    `;
+    // Вставити після amend-history (якщо є) або chapter-context, або як перший
+    const ah = main.querySelector('.amend-history');
+    const cc = main.querySelector('.chapter-context');
+    const after = ah || cc;
+    if (after && after.nextSibling) {
+      after.parentNode.insertBefore(inline, after.nextSibling);
+    } else {
+      // як останній варіант — після h1
+      const h1 = main.querySelector('h1');
+      if (h1 && h1.nextSibling) h1.parentNode.insertBefore(inline, h1.nextSibling);
+      else main.prepend(inline);
+    }
+
+    // Active highlight on scroll — навіть якщо TOC закритий
+    const links = inline.querySelectorAll('a');
+    const observer = new IntersectionObserver(entries => {
+      entries.forEach(e => {
+        if (e.isIntersecting) {
+          const id = e.target.id;
+          links.forEach(l => l.classList.toggle('active', l.getAttribute('href') === '#' + id));
+        }
+      });
+    }, { rootMargin: '-15% 0px -70% 0px' });
+    anchors.forEach(a => observer.observe(a));
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', run);
+  else run();
+})();
+
+// ── Flash-підсвітка при переході по якорю ──
+(function() {
+  function flash() {
+    const hash = decodeURIComponent(location.hash || '').slice(1);
+    if (!hash) return;
+    const a = document.getElementById(hash);
+    if (!a) return;
+    // Шукаємо найближчий h2/h3 нижче (або батьківський, якщо <a> вкладений)
+    let target = null;
+    let next = a.nextElementSibling;
+    while (next && next.tagName) {
+      if (/^H[2-4]$/.test(next.tagName)) { target = next; break; }
+      if (next.classList?.contains('amend-history') || next.tagName === 'A') break;
+      next = next.nextElementSibling;
+    }
+    if (!target) {
+      const par = a.parentElement;
+      if (par && /^H[2-4]$/.test(par.tagName)) target = par;
+    }
+    if (!target) return;
+    target.classList.add('xref-flash');
+    setTimeout(() => target.classList.remove('xref-flash'), 1800);
+  }
+  window.addEventListener('hashchange', flash);
+  window.addEventListener('load', flash);
+})();
+
 // ── Amendment marker freshness — додаємо data-year на blockquote з посиланнями zNNNN-YY ──
 (function() {
   function run() {
