@@ -1,10 +1,13 @@
 ---
 id: dodatok.3
 type: dodatok
-parent: polozhennia
-title: "Додаток 3. Таблиці додаткових вимог до стану здоров'я (ТДВ)"
+parent_id: polozhennia
+title: "Додаток 3. ТДВ"
+official_title: "Таблиці додаткових вимог до стану здоров'я"
 source: https://zakon.rada.gov.ua/laws/show/z1109-08
 status: active
+parent: Додатки
+nav_order: 3
 stub: true
 ---
 

@@ -1,10 +1,13 @@
 ---
 id: polozhennia.r2.gl1
 type: glava
-parent: polozhennia.r2
-title: "Глава 1. Загальні положення (медичного огляду)"
+parent_id: polozhennia.r2
+title: "Глава 1. Загальні положення"
 source: https://zakon.rada.gov.ua/laws/show/z1109-08
 status: active
+parent: "Розділ II. Медичний огляд"
+grand_parent: Положення
+nav_order: 1
 stub: true
 ---
 

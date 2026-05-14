@@ -1,10 +1,14 @@
 ---
 id: polozhennia
 type: polozhennia
-parent: nakaz.p1
-title: "Положення про військово-лікарську експертизу в Збройних Силах України"
+parent_id: nakaz.p1   # ← наш id-граф (не плутати з Jekyll-полем `parent`)
+title: "Положення"
+official_title: "Положення про військово-лікарську експертизу в Збройних Силах України"
 source: https://zakon.rada.gov.ua/laws/show/z1109-08
 status: active
+nav_order: 5
+has_children: true
+permalink: /polozhennia/
 ---
 
 # Положення про військово-лікарську експертизу в Збройних Силах України

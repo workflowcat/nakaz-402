@@ -1,10 +1,13 @@
 ---
 id: dodatok.5
 type: dodatok
-parent: polozhennia
-title: "Додаток 5. Довідка про обставини травми (поранення, контузії, каліцтва)"
+parent_id: polozhennia
+title: "Додаток 5. Довідка (травма)"
+official_title: "Довідка про обставини травми (поранення, контузії, каліцтва)"
 source: https://zakon.rada.gov.ua/laws/show/z1109-08
 status: active
+parent: Додатки
+nav_order: 5
 stub: true
 ---
 

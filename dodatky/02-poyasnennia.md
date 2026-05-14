@@ -1,10 +1,13 @@
 ---
 id: dodatok.2
 type: dodatok
-parent: polozhennia
-title: "Додаток 2. Пояснення щодо застосування статей Розкладу хвороб"
+parent_id: polozhennia
+title: "Додаток 2. Пояснення"
+official_title: "Пояснення щодо застосування статей Розкладу хвороб"
 source: https://zakon.rada.gov.ua/laws/show/z1109-08
 status: active
+parent: Додатки
+nav_order: 2
 stub: true
 ---
 

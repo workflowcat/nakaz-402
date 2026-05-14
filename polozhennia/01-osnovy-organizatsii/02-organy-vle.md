@@ -1,11 +1,14 @@
 ---
 id: polozhennia.r1.gl2
 type: glava
-parent: polozhennia.r1
-title: "Глава 2. Органи військово-лікарської експертизи"
+parent_id: polozhennia.r1
+title: "Глава 2. Органи ВЛЕ"
 source: https://zakon.rada.gov.ua/laws/show/z1109-08#n36
 status: active
-stub: true   # ← цей файл — заглушка, потрібен PR з повним текстом
+parent: "Розділ I. Основи організації ВЛЕ"
+grand_parent: Положення
+nav_order: 2
+stub: true
 ---
 
 # Глава 2. Органи військово-лікарської експертизи

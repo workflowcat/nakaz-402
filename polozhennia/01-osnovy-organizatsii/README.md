@@ -1,10 +1,13 @@
 ---
 id: polozhennia.r1
 type: rozdil
-parent: polozhennia
-title: "Розділ I. Основи організації військово-лікарської експертизи"
+parent_id: polozhennia
+title: "Розділ I. Основи організації ВЛЕ"
 source: https://zakon.rada.gov.ua/laws/show/z1109-08
 status: active
+parent: Положення
+nav_order: 1
+has_children: true
 ---
 
 # Розділ I. Основи організації військово-лікарської експертизи

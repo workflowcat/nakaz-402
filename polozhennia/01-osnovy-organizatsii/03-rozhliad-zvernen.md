@@ -1,10 +1,13 @@
 ---
 id: polozhennia.r1.gl3
 type: glava
-parent: polozhennia.r1
-title: "Глава 3. Порядок подання та розгляду звернень"
+parent_id: polozhennia.r1
+title: "Глава 3. Порядок розгляду звернень"
 source: https://zakon.rada.gov.ua/laws/show/z1109-08
 status: active
+parent: "Розділ I. Основи організації ВЛЕ"
+grand_parent: Положення
+nav_order: 3
 stub: true
 amended_by:
   - { date: 2024-04-27, order: z0616-24, op: edit, scope: "порядок розгляду звернень — суттєво змінено" }

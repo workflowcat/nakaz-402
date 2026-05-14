@@ -1,11 +1,14 @@
 ---
 id: dodatok.1
 type: dodatok
-parent: polozhennia
-title: "Додаток 1. Розклад хвороб, станів та фізичних вад, що визначають ступінь придатності до військової служби"
+parent_id: polozhennia
+title: "Додаток 1. Розклад хвороб"
+official_title: "Розклад хвороб, станів та фізичних вад, що визначають ступінь придатності до військової служби"
 short_title: "Розклад хвороб"
 source: https://zakon.rada.gov.ua/laws/show/z1109-08
 status: active
+parent: Додатки
+nav_order: 1
 ---
 
 # Додаток 1. Розклад хвороб

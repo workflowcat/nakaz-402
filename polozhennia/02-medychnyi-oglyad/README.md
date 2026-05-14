@@ -1,10 +1,13 @@
 ---
 id: polozhennia.r2
 type: rozdil
-parent: polozhennia
+parent_id: polozhennia
 title: "Розділ II. Медичний огляд"
 source: https://zakon.rada.gov.ua/laws/show/z1109-08
 status: active
+parent: Положення
+nav_order: 2
+has_children: true
 stub: true
 ---
 

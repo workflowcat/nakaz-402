@@ -1,0 +1,70 @@
+# Jekyll config for GitHub Pages.
+# Тема: just-the-docs — оптимальна для технічної документації, має пошук,
+# двопанельну навігацію, темний/світлий режим.
+
+title: "Наказ МОУ № 402 · git-редакція"
+description: >-
+  Машино-читабельна реплікація Наказу Міністерства оборони України № 402
+  від 14.08.2008 про військово-лікарську експертизу.
+lang: uk
+url: ""        # ← після першого деплою заповнити https://<user>.github.io
+baseurl: ""    # ← якщо репо не на user.github.io, тут "/nakaz-402"
+
+remote_theme: just-the-docs/just-the-docs
+
+# Налаштування теми
+color_scheme: light
+search_enabled: true
+search:
+  heading_level: 3
+  previews: 2
+  preview_words_before: 4
+  preview_words_after: 4
+  rel_url: true
+
+heading_anchors: true
+back_to_top: true
+back_to_top_text: "Нагору"
+
+# Меню зверху
+aux_links:
+  "Офіційний текст (rada.gov.ua)":
+    - https://zakon.rada.gov.ua/laws/show/z1109-08
+
+# Підвал
+footer_content: >-
+  Тексти НПА — public domain (ст. 10 ЗУ «Про авторське право і суміжні
+  права»). Цей сайт — інженерна реплікація під CC0. Юридично авторитетний
+  текст — на zakon.rada.gov.ua.
+
+# Версія наказу — буде підставлятись у layout-ах
+nakaz:
+  number: "402"
+  ministry: "Міністерство оборони України"
+  signed_at: "2008-08-14"
+  registration: "z1109-08"
+  current_redaction: "2025-08-22"
+
+# Не публікувати в збірці
+exclude:
+  - Gemfile
+  - Gemfile.lock
+  - vendor/
+  - .gitignore
+  - .github/
+  - README.md   # README залишаємо у репо для GitHub-перегляду; на сайті — index.md
+
+# Підвантажити плагіни
+plugins:
+  - jekyll-remote-theme
+  - jekyll-seo-tag
+  - jekyll-sitemap
+  - jekyll-redirect-from
+
+# Включати .yaml файли з dodatky/01-rozklad-khvorob/ як ресурси (не сторінки)
+include:
+  - "dodatky/01-rozklad-khvorob/*.yaml"
+  - "meta/*.yaml"
+
+# Поля frontmatter у наших файлах нестандартні (id, type, status тощо)
+# — Jekyll їх ігнорує, але можемо мати до них доступ через page.<field>.

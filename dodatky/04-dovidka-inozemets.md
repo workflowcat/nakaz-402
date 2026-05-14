@@ -1,10 +1,13 @@
 ---
 id: dodatok.4
 type: dodatok
-parent: polozhennia
-title: "Додаток 4. Довідка ВЛК про непридатність іноземного військовослужбовця за станом здоров'я до подальшого навчання"
+parent_id: polozhennia
+title: "Додаток 4. Довідка (іноземець)"
+official_title: "Довідка ВЛК про непридатність іноземного військовослужбовця за станом здоров'я до подальшого навчання"
 source: https://zakon.rada.gov.ua/laws/show/z1109-08
 status: active
+parent: Додатки
+nav_order: 4
 stub: true
 ---
 
