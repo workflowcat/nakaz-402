@@ -52,6 +52,52 @@ permalink: /
   </div>
 </div>
 
+## Стан наповнення
+
+{% assign chapter_total = 0 %}
+{% assign chapter_done = 0 %}
+{% for p in site.html_pages %}
+  {% if p.type == "glava" %}
+    {% assign chapter_total = chapter_total | plus: 1 %}
+    {% unless p.stub %}
+      {% assign chapter_done = chapter_done | plus: 1 %}
+    {% endunless %}
+  {% endif %}
+{% endfor %}
+{% assign chapter_pct = chapter_done | times: 100 | divided_by: chapter_total %}
+
+{% assign amend_total = site.data.amendments.amendments.size %}
+{% assign amend_mapped = 0 %}
+{% for a in site.data.amendments.amendments %}
+  {% if a.affects.size > 0 %}{% assign amend_mapped = amend_mapped | plus: 1 %}{% endif %}
+{% endfor %}
+{% assign amend_pct = amend_mapped | times: 100 | divided_by: amend_total %}
+
+<div class="coverage">
+  <div class="cov-item">
+    <div class="cov-head">
+      <span class="cov-label">Глави з повним текстом</span>
+      <span class="cov-value">{{ chapter_done }} / {{ chapter_total }}</span>
+    </div>
+    <div class="cov-bar"><div class="cov-bar-fill" style="width: {{ chapter_pct }}%"></div></div>
+  </div>
+  <div class="cov-item">
+    <div class="cov-head">
+      <span class="cov-label">Амендменти з розкладкою affects[]</span>
+      <span class="cov-value">{{ amend_mapped }} / {{ amend_total }}</span>
+    </div>
+    <div class="cov-bar"><div class="cov-bar-fill" style="width: {{ amend_pct }}%"></div></div>
+  </div>
+  <div class="cov-item">
+    <div class="cov-head">
+      <span class="cov-label">Статей Розкладу хвороб</span>
+      <span class="cov-value">3 / ~80 <em>(демо)</em></span>
+    </div>
+    <div class="cov-bar"><div class="cov-bar-fill" style="width: 4%"></div></div>
+  </div>
+  <p class="cov-note">Авторитетним джерелом залишається <a href="https://zakon.rada.gov.ua/laws/show/z1109-08" target="_blank" rel="noopener">текст на rada.gov.ua</a>. Цей репо — інженерна реплікація, наповнюється поступово.</p>
+</div>
+
 ## Останні зміни
 
 <div class="mini-feed">
