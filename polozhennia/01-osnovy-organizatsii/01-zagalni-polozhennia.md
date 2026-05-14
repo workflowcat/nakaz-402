@@ -3,6 +3,7 @@ id: polozhennia.r1.gl1
 type: glava
 parent_id: polozhennia.r1
 title: "Глава 1. Загальні положення"
+flavor: content
 source: https://zakon.rada.gov.ua/laws/show/z1109-08#n11
 status: active
 parent: "Розділ I. Основи організації ВЛЕ"

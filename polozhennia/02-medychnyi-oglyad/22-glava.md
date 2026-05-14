@@ -3,6 +3,7 @@ id: polozhennia.r2.gl22
 type: glava
 parent_id: polozhennia.r2
 title: "Глава 22. Спеціальні випадки експертизи"
+flavor: content
 source: https://zakon.rada.gov.ua/laws/show/z1109-08
 status: active
 parent: "Розділ II. Медичний огляд"

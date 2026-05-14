@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="{{ page.lang | default: site.lang | default: 'uk' }}" class="theme-auto">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="color-scheme" content="light dark">
+  <meta name="theme-color" content="#7253ed" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#1a1625" media="(prefers-color-scheme: dark)">
+
+  <title>{% if page.title %}{{ page.title }} · {{ site.title }}{% else %}{{ site.title }}{% endif %}</title>
+
+  {% seo title=false %}
+
+  <link rel="icon" type="image/svg+xml" href="{{ '/favicon.svg' | relative_url }}">
+  <link rel="mask-icon" href="{{ '/favicon.svg' | relative_url }}" color="#7253ed">
+
+  <link rel="stylesheet" href="{{ '/assets/css/site.css' | relative_url }}">
+
+  <!-- Theme: встановлюємо клас до рендеру щоб уникнути flash of incorrect theme -->
+  <script>
+    (function(){
+      try {
+        var saved = localStorage.getItem('theme');
+        if (saved === 'dark' || (saved === null && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+          document.documentElement.classList.add('theme-dark');
+        }
+      } catch (e) {}
+    })();
+  </script>
+</head>
+
+<body data-page-url="{{ page.url }}" class="page-{{ page.flavor | default: 'tool' }}">
+
+<a class="skip-link" href="#main">До контенту</a>
+
+<header class="site-header" role="banner">
+  <div class="header-inner">
+    <a class="brand" href="{{ '/' | relative_url }}" aria-label="Наказ МОУ № 402 — головна">
+      <span class="brand-mark" aria-hidden="true">402</span>
+      <span class="brand-name">Наказ&nbsp;МОУ&nbsp;№&nbsp;402</span>
+    </a>
+
+    <nav class="primary-nav" aria-label="Головна навігація">
+      {%- assign url = page.url -%}
+      <a href="{{ '/changes/' | relative_url }}" class="nav-link {% if url contains '/changes' %}is-active{% endif %}">Зміни</a>
+      <a href="{{ '/diff/' | relative_url }}" class="nav-link {% if url contains '/diff' %}is-active{% endif %}">Diff</a>
+      <a href="{{ '/nakaz/' | relative_url }}" class="nav-link {% if url == '/nakaz/' or url == '/nakaz.html' %}is-active{% endif %}">Наказ</a>
+      <a href="{{ '/polozhennia/' | relative_url }}" class="nav-link {% if url contains '/polozhennia' %}is-active{% endif %}">Положення</a>
+      <a href="{{ '/dodatky/' | relative_url }}" class="nav-link {% if url contains '/dodatky' %}is-active{% endif %}">Додатки</a>
+      <a href="{{ '/examples/drafts/' | relative_url }}" class="nav-link {% if url contains '/drafts' %}is-active{% endif %}">DOCX</a>
+      <a href="{{ '/api-docs/' | relative_url }}" class="nav-link {% if url contains '/api' %}is-active{% endif %}">API</a>
+    </nav>
+
+    <div class="header-actions">
+      <button class="search-trigger" type="button" aria-label="Пошук (натисни /)" aria-keyshortcuts="/">
+        <span class="kbd">/</span>
+        <span class="search-label">Пошук</span>
+      </button>
+      <button class="theme-toggle" type="button" aria-label="Перемкнути тему">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+        </svg>
+      </button>
+      <a class="gh-link" href="https://github.com/workflowcat/nakaz-402" target="_blank" rel="noopener" aria-label="GitHub">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M12 0c-6.63 0-12 5.37-12 12 0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/></svg>
+      </a>
+      <button class="mobile-menu-toggle" type="button" aria-label="Меню" aria-expanded="false">
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+      </button>
+    </div>
+  </div>
+</header>
+
+<!-- Mobile nav drawer -->
+<div class="mobile-nav" id="mobile-nav" hidden>
+  <nav aria-label="Мобільна навігація">
+    <a href="{{ '/' | relative_url }}">Головна</a>
+    <a href="{{ '/changes/' | relative_url }}">Зміни</a>
+    <a href="{{ '/diff/' | relative_url }}">Diff</a>
+    <a href="{{ '/nakaz/' | relative_url }}">Наказ № 402</a>
+    <a href="{{ '/polozhennia/' | relative_url }}">Положення</a>
+    <a href="{{ '/dodatky/' | relative_url }}">Додатки</a>
+    <a href="{{ '/examples/drafts/' | relative_url }}">Зразки DOCX</a>
+    <a href="{{ '/api-docs/' | relative_url }}">JSON API</a>
+    <a href="https://github.com/workflowcat/nakaz-402" target="_blank" rel="noopener">GitHub ↗</a>
+  </nav>
+</div>
+
+<!-- Search overlay -->
+<div class="search-overlay" id="search-overlay" hidden>
+  <div class="search-overlay-bg" data-search-close></div>
+  <div class="search-panel">
+    <input type="search" id="search-input" class="search-input" placeholder="Шукати по сайту…" autocomplete="off" spellcheck="false">
+    <div class="search-results" id="search-results">
+      <p class="search-hint">Друкуй, щоб знайти. <kbd>↑</kbd><kbd>↓</kbd> — навігація, <kbd>↵</kbd> — відкрити, <kbd>Esc</kbd> — закрити.</p>
+    </div>
+  </div>
+</div>
+
+<main id="main" class="site-main">
+  {{ content }}
+</main>
+
+<footer class="site-footer">
+  <div class="footer-inner">
+    <div class="footer-left">
+      <p>
+        Авторитетним залишається текст на
+        <a href="https://zakon.rada.gov.ua/laws/show/z1109-08" target="_blank" rel="noopener">zakon.rada.gov.ua</a>.
+        Цей репо — інженерна реплікація під
+        <a href="https://github.com/workflowcat/nakaz-402/blob/main/LICENSE">CC0</a>.
+      </p>
+    </div>
+    <div class="footer-right">
+      <a href="https://github.com/workflowcat/nakaz-402">Source</a>
+      <span class="dot">·</span>
+      <a href="{{ '/changes/' | relative_url }}">Зміни</a>
+      <span class="dot">·</span>
+      <a href="https://github.com/workflowcat/nakaz-402/issues">Issues</a>
+    </div>
+  </div>
+</footer>
+
+{% include scripts.html %}
+
+</body>
+</html>

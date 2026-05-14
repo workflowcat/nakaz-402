@@ -3,6 +3,7 @@ id: polozhennia.r1.gl3
 type: glava
 parent_id: polozhennia.r1
 title: "Глава 3. Порядок розгляду звернень"
+flavor: content
 source: https://zakon.rada.gov.ua/laws/show/z1109-08
 status: active
 parent: "Розділ I. Основи організації ВЛЕ"

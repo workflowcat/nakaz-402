@@ -7,6 +7,7 @@ signed_at: "2008-08-14"
 registered_at: "2008-08-26"
 registration_number: "z1109-08"
 title: "Наказ № 402"
+flavor: content
 official_title: "Про затвердження Положення про військово-лікарську експертизу в Збройних Силах України"
 source: "https://zakon.rada.gov.ua/laws/show/z1109-08"
 status: active

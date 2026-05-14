@@ -3,6 +3,7 @@ id: polozhennia.r1.gl2
 type: glava
 parent_id: polozhennia.r1
 title: "Глава 2. Органи ВЛЕ"
+flavor: content
 official_title: "Глава 2. Органи військово-лікарської експертизи"
 source: https://zakon.rada.gov.ua/laws/show/z1109-08#n36
 status: active

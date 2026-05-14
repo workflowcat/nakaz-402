@@ -3,6 +3,7 @@ id: polozhennia.r2.gl12
 type: glava
 parent_id: polozhennia.r2
 title: "Глава 12. Медичний огляд парашутистів"
+flavor: content
 source: https://zakon.rada.gov.ua/laws/show/z1109-08
 status: active
 parent: "Розділ II. Медичний огляд"

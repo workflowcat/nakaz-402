@@ -3,6 +3,7 @@ id: polozhennia.r2.gl21
 type: glava
 parent_id: polozhennia.r2
 title: "Глава 21. Установлення причинного зв'язку захворювань і травм"
+flavor: content
 source: https://zakon.rada.gov.ua/laws/show/z1109-08
 status: active
 parent: "Розділ II. Медичний огляд"

@@ -3,6 +3,7 @@ id: polozhennia.r2.gl16
 type: glava
 parent_id: polozhennia.r2
 title: "Глава 16. Медичний огляд при особливих видах діяльності"
+flavor: content
 source: https://zakon.rada.gov.ua/laws/show/z1109-08
 status: active
 parent: "Розділ II. Медичний огляд"

@@ -1,79 +1,138 @@
-{% comment %}
-  Глобальні кастомізації:
-  - favicon + theme color
-  - link на скомпільовану таблицю стилів /assets/css/site.css
-  - JS: glossary tooltips + amendment freshness highlighting
-{% endcomment %}
-
-<link rel="icon" type="image/svg+xml" href="{{ '/favicon.svg' | relative_url }}">
-<link rel="mask-icon" href="{{ '/favicon.svg' | relative_url }}" color="#7253ed">
-<meta name="theme-color" content="#7253ed">
-
-<link rel="stylesheet" href="{{ '/assets/css/site.css' | relative_url }}">
-
-{% if page.wide %}
-<style>
-  /* WIDE LAYOUT — для інструмент-сторінок (/, /changes/, /diff/) */
-  .side-bar { display: none !important; }
-  .main { margin-left: 0 !important; max-width: 100% !important; }
-  .main-content-wrap { max-width: 1400px !important; margin: 0 auto; padding-left: 2.25rem !important; padding-right: 2.25rem !important; }
-  .main-content { max-width: 100% !important; }
-  .main-header {
-    max-width: 1400px;
-    margin: 0 auto;
-    padding-left: 2.25rem;
-    padding-right: 2.25rem;
-  }
-  /* Тонка верхня nav-стрічка для wide-сторінок */
-  .wide-topnav {
-    display: flex;
-    gap: 1.4rem;
-    align-items: center;
-    padding: 0.65rem 0;
-    margin: 0 0 1rem;
-    border-bottom: 1px solid var(--border);
-    font-size: 0.88rem;
-  }
-  .wide-topnav .wn-brand {
-    font-weight: 600;
-    letter-spacing: -0.01em;
-    display: inline-flex;
-    align-items: center;
-    gap: 0.45rem;
-    text-decoration: none;
-    color: var(--body-text-color);
-    margin-right: auto;
-  }
-  .wide-topnav .wn-brand-mark {
-    display: inline-block;
-    width: 22px;
-    height: 22px;
-    background: var(--accent);
-    border-radius: 5px;
-    color: white;
-    font-size: 0.62rem;
-    font-weight: 700;
-    text-align: center;
-    line-height: 22px;
-    letter-spacing: -0.5px;
-  }
-  .wide-topnav a:not(.wn-brand) {
-    color: var(--body-text-color);
-    opacity: 0.72;
-    text-decoration: none;
-    transition: opacity 0.12s;
-  }
-  .wide-topnav a:not(.wn-brand):hover { opacity: 1; color: var(--accent); }
-  .wide-topnav a.wn-active { opacity: 1; color: var(--accent); }
-  @media (max-width: 760px) {
-    .main-content-wrap { padding-left: 1rem !important; padding-right: 1rem !important; }
-    .wide-topnav { gap: 1rem; flex-wrap: wrap; font-size: 0.82rem; }
-  }
-</style>
-{% endif %}
-
 <script>
-// ── Glossary tooltips ──
+// =============================================================
+// Theme toggle (light / dark / auto)
+// =============================================================
+(function() {
+  const root = document.documentElement;
+  const btn = document.querySelector('.theme-toggle');
+  if (!btn) return;
+
+  function applyTheme(mode) {
+    if (mode === 'dark') root.classList.add('theme-dark');
+    else if (mode === 'light') root.classList.remove('theme-dark');
+    else { // auto
+      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      root.classList.toggle('theme-dark', prefersDark);
+    }
+  }
+
+  btn.addEventListener('click', () => {
+    const cur = localStorage.getItem('theme');
+    const next = cur === 'dark' ? 'light' : (cur === 'light' ? 'auto' : 'dark');
+    if (next === 'auto') localStorage.removeItem('theme'); else localStorage.setItem('theme', next);
+    applyTheme(next || 'auto');
+  });
+
+  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+    if (!localStorage.getItem('theme')) applyTheme('auto');
+  });
+})();
+
+// =============================================================
+// Mobile nav drawer
+// =============================================================
+(function() {
+  const toggle = document.querySelector('.mobile-menu-toggle');
+  const drawer = document.getElementById('mobile-nav');
+  if (!toggle || !drawer) return;
+  toggle.addEventListener('click', () => {
+    const isOpen = !drawer.hidden;
+    drawer.hidden = isOpen;
+    toggle.setAttribute('aria-expanded', String(!isOpen));
+    document.body.style.overflow = !isOpen ? 'hidden' : '';
+  });
+  drawer.querySelectorAll('a').forEach(a => a.addEventListener('click', () => {
+    drawer.hidden = true;
+    document.body.style.overflow = '';
+    toggle.setAttribute('aria-expanded', 'false');
+  }));
+})();
+
+// =============================================================
+// Search overlay
+// =============================================================
+(function() {
+  const trigger = document.querySelector('.search-trigger');
+  const overlay = document.getElementById('search-overlay');
+  const input = document.getElementById('search-input');
+  const results = document.getElementById('search-results');
+  if (!trigger || !overlay || !input || !results) return;
+
+  // Index: формується з усіх Liquid-збираних page-метаданих
+  const INDEX = window.__SITE_INDEX__ || [];
+
+  function open() {
+    overlay.hidden = false;
+    document.body.style.overflow = 'hidden';
+    setTimeout(() => input.focus(), 30);
+  }
+  function close() {
+    overlay.hidden = true;
+    document.body.style.overflow = '';
+    input.value = '';
+    render('');
+  }
+
+  function render(q) {
+    q = q.trim().toLowerCase();
+    if (!q) {
+      results.innerHTML = '<p class="search-hint">Друкуй, щоб знайти. <kbd>↑</kbd><kbd>↓</kbd> — навігація, <kbd>↵</kbd> — відкрити, <kbd>Esc</kbd> — закрити.</p>';
+      return;
+    }
+    const matched = INDEX.map(item => {
+      const hay = (item.title + ' ' + item.desc + ' ' + (item.id || '')).toLowerCase();
+      // Простий scoring: title hit > desc hit > id hit
+      let score = 0;
+      if (item.title.toLowerCase().includes(q)) score += 10;
+      if (hay.includes(q)) score += 3;
+      const tokens = q.split(/\s+/);
+      tokens.forEach(t => { if (hay.includes(t)) score += 1; });
+      return { item, score };
+    }).filter(x => x.score > 0).sort((a, b) => b.score - a.score).slice(0, 25);
+
+    if (matched.length === 0) {
+      results.innerHTML = '<p class="search-empty">Нічого не знайдено.</p>';
+      return;
+    }
+    results.innerHTML = '<ul class="search-list">' + matched.map((x, i) => `
+      <li class="search-item ${i === 0 ? 'active' : ''}">
+        <a href="${x.item.url}">
+          <span class="si-title">${x.item.title}</span>
+          ${x.item.id ? `<span class="si-id">${x.item.id}</span>` : ''}
+          ${x.item.desc ? `<span class="si-desc">${x.item.desc}</span>` : ''}
+        </a>
+      </li>
+    `).join('') + '</ul>';
+  }
+
+  trigger.addEventListener('click', open);
+  document.addEventListener('keydown', e => {
+    if (e.key === '/' && !e.target.matches('input,textarea')) { e.preventDefault(); open(); }
+    if (e.key === 'Escape' && !overlay.hidden) close();
+    // ↑↓ navigation у результатах
+    if (!overlay.hidden && (e.key === 'ArrowUp' || e.key === 'ArrowDown' || e.key === 'Enter')) {
+      const items = Array.from(results.querySelectorAll('.search-item'));
+      if (!items.length) return;
+      let idx = items.findIndex(i => i.classList.contains('active'));
+      if (idx < 0) idx = 0;
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        items[idx].querySelector('a').click();
+        return;
+      }
+      if (e.key === 'ArrowDown') idx = Math.min(items.length - 1, idx + 1);
+      else idx = Math.max(0, idx - 1);
+      items.forEach((it, i) => it.classList.toggle('active', i === idx));
+      e.preventDefault();
+    }
+  });
+  document.querySelectorAll('[data-search-close]').forEach(el => el.addEventListener('click', close));
+  input.addEventListener('input', e => render(e.target.value));
+})();
+
+// =============================================================
+// Glossary tooltips (auto-wrap абревіатур)
+// =============================================================
 (function() {
   const G = {
     'ЦВЛК': 'Центральна військово-лікарська комісія',
@@ -105,17 +164,14 @@
   const terms = Object.keys(G).sort((a, b) => b.length - a.length);
   const esc = terms.map(t => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
   let regex;
-  try {
-    regex = new RegExp('(?<![\\p{L}\\p{N}])(' + esc.join('|') + ')(?![\\p{L}\\p{N}])', 'gu');
-  } catch (e) {
-    regex = new RegExp('(' + esc.join('|') + ')', 'g');
-  }
-  const SKIP = new Set(['A','ABBR','CODE','PRE','SCRIPT','STYLE','TEXTAREA','INPUT','BUTTON','NAV','HEADER','FOOTER']);
+  try { regex = new RegExp('(?<![\\p{L}\\p{N}])(' + esc.join('|') + ')(?![\\p{L}\\p{N}])', 'gu'); }
+  catch (e) { regex = new RegExp('(' + esc.join('|') + ')', 'g'); }
+  const SKIP = new Set(['A','ABBR','CODE','PRE','SCRIPT','STYLE','TEXTAREA','INPUT','BUTTON','NAV','HEADER','FOOTER','SUMMARY']);
   function skip(node) {
     let p = node.parentElement;
     while (p && p !== document.body) {
       if (SKIP.has(p.tagName)) return true;
-      if (p.classList?.contains('no-glossary') || p.classList?.contains('site-nav')) return true;
+      if (p.classList?.contains('no-glossary') || p.classList?.contains('primary-nav') || p.classList?.contains('search-list')) return true;
       p = p.parentElement;
     }
     return false;
@@ -141,8 +197,8 @@
     node.parentNode.replaceChild(frag, node);
   }
   function run() {
-    if (!document.body) return;
-    const w = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+    const target = document.querySelector('.site-main') || document.body;
+    const w = document.createTreeWalker(target, NodeFilter.SHOW_TEXT);
     const nodes = [];
     let n;
     while ((n = w.nextNode())) nodes.push(n);
@@ -152,22 +208,17 @@
   else run();
 })();
 
-// ── Auto-link внутрішніх посилань на пункти ──
-// Шукає в тексті патерни типу "пунктом 1.2", "у пункті 2.5", "за главою 2"
-// і робить їх клікабельними, якщо в цій же сторінці є відповідний якір.
+// =============================================================
+// Auto-link cross-references до пунктів (на цій же сторінці)
+// =============================================================
 (function() {
   function run() {
-    const main = document.querySelector('.main-content');
+    const main = document.querySelector('.site-main');
     if (!main) return;
-    // Збираємо всі наявні якорі p1.1, p2.5 тощо
     const knownAnchors = new Set();
     main.querySelectorAll('a[id^="p"]').forEach(a => knownAnchors.add(a.id.slice(1)));
     if (knownAnchors.size === 0) return;
-
-    // Регекс: «пункт», «у пункті», «за пунктом», «п.»
-    // — Ukrainian inflections + numeric pattern N or N.M or N.M.K
     const PUNKT_RE = /\b(пункт(?:ом|у|а|і|и|ів)?|п\.)\s*(\d+(?:\.\d+){0,2})/g;
-
     const SKIP = new Set(['A','ABBR','CODE','PRE','SCRIPT','STYLE','BUTTON','SUMMARY']);
     function inside(node) {
       let p = node.parentElement;
@@ -178,12 +229,10 @@
       }
       return false;
     }
-
     const walker = document.createTreeWalker(main, NodeFilter.SHOW_TEXT);
     const nodes = [];
     let n;
     while ((n = walker.nextNode())) nodes.push(n);
-
     nodes.forEach(node => {
       if (inside(node)) return;
       const text = node.nodeValue;
@@ -191,10 +240,8 @@
       PUNKT_RE.lastIndex = 0;
       if (!PUNKT_RE.test(text)) return;
       PUNKT_RE.lastIndex = 0;
-
       const frag = document.createDocumentFragment();
-      let last = 0, m;
-      let replaced = false;
+      let last = 0, m, replaced = false;
       while ((m = PUNKT_RE.exec(text)) !== null) {
         const punktNum = m[2];
         if (!knownAnchors.has(punktNum)) continue;
@@ -217,12 +264,12 @@
   else run();
 })();
 
-// ── Chapter mini-TOC ──
-// Будує collapsible TOC угорі сторінки + (на великих екранах) також
-// плаваючу sticky-панель справа всередині main-content.
+// =============================================================
+// Chapter in-page TOC (collapsible)
+// =============================================================
 (function() {
   function run() {
-    const main = document.querySelector('.main-content');
+    const main = document.querySelector('.site-main');
     if (!main) return;
     const anchors = main.querySelectorAll('a[id^="p"]');
     if (anchors.length < 3) return;
@@ -239,42 +286,35 @@
         const parent = a.parentElement;
         if (parent && /^H[2-4]$/.test(parent.tagName)) next = parent;
       }
-      const text = next ? next.textContent.replace(/^\s*\W*\s*/, '').trim() : id;
+      const text = next ? next.textContent.trim() : id;
       const level = next && next.tagName === 'H3' ? 'h3' : 'h2';
       items.push({ id, text, level });
     });
+    if (!items.length) return;
 
-    if (items.length === 0) return;
-
-    // Inline collapsible TOC угорі сторінки
-    const inline = document.createElement('details');
-    inline.className = 'chapter-toc-inline no-glossary';
-    inline.innerHTML = `
-      <summary>📍 Пункти в цій главі <span class="ctoc-count">${items.length}</span></summary>
+    const toc = document.createElement('details');
+    toc.className = 'chapter-toc no-glossary';
+    toc.innerHTML = `
+      <summary>
+        <span class="toc-icon" aria-hidden="true">▸</span>
+        Пункти в цій главі
+        <span class="toc-count">${items.length}</span>
+      </summary>
       <ul>
-        ${items.map(i => `<li class="ctoc-${i.level}"><a href="#${i.id}">${i.text}</a></li>`).join('')}
+        ${items.map(i => `<li class="toc-${i.level}"><a href="#${i.id}">${i.text}</a></li>`).join('')}
       </ul>
     `;
-    // Вставити після amend-history (якщо є) або chapter-context, або як перший
     const ah = main.querySelector('.amend-history');
     const cc = main.querySelector('.chapter-context');
     const after = ah || cc;
-    if (after && after.nextSibling) {
-      after.parentNode.insertBefore(inline, after.nextSibling);
-    } else {
-      // як останній варіант — після h1
-      const h1 = main.querySelector('h1');
-      if (h1 && h1.nextSibling) h1.parentNode.insertBefore(inline, h1.nextSibling);
-      else main.prepend(inline);
-    }
+    if (after && after.nextSibling) after.parentNode.insertBefore(toc, after.nextSibling);
+    else (main.querySelector('h1') || main.firstElementChild).insertAdjacentElement('afterend', toc);
 
-    // Active highlight on scroll — навіть якщо TOC закритий
-    const links = inline.querySelectorAll('a');
+    const links = toc.querySelectorAll('a');
     const observer = new IntersectionObserver(entries => {
       entries.forEach(e => {
         if (e.isIntersecting) {
-          const id = e.target.id;
-          links.forEach(l => l.classList.toggle('active', l.getAttribute('href') === '#' + id));
+          links.forEach(l => l.classList.toggle('active', l.getAttribute('href') === '#' + e.target.id));
         }
       });
     }, { rootMargin: '-15% 0px -70% 0px' });
@@ -284,14 +324,15 @@
   else run();
 })();
 
-// ── Flash-підсвітка при переході по якорю ──
+// =============================================================
+// Flash при переході по якорю
+// =============================================================
 (function() {
   function flash() {
     const hash = decodeURIComponent(location.hash || '').slice(1);
     if (!hash) return;
     const a = document.getElementById(hash);
     if (!a) return;
-    // Шукаємо найближчий h2/h3 нижче (або батьківський, якщо <a> вкладений)
     let target = null;
     let next = a.nextElementSibling;
     while (next && next.tagName) {
@@ -311,11 +352,13 @@
   window.addEventListener('load', flash);
 })();
 
-// ── Amendment marker freshness — додаємо data-year на blockquote з посиланнями zNNNN-YY ──
+// =============================================================
+// Amendment marker styling — додаємо data-year на blockquote
+// =============================================================
 (function() {
   function run() {
     const yearRe = /z\d{3,5}-(\d{2})/g;
-    document.querySelectorAll('blockquote').forEach(bq => {
+    document.querySelectorAll('.site-main blockquote').forEach(bq => {
       const matches = [...bq.textContent.matchAll(yearRe)];
       if (!matches.length) return;
       bq.classList.add('amend-marker');
@@ -326,14 +369,13 @@
         if (full > maxY) maxY = full;
       });
       bq.dataset.year = maxY;
-
       if (maxY >= 2024) {
         let prev = bq.previousElementSibling;
         while (prev && !/^H[23]$/.test(prev.tagName || '')) prev = prev.previousElementSibling;
         if (prev && !prev.querySelector('.freshness-badge')) {
           const badge = document.createElement('span');
           badge.className = 'freshness-badge y-' + maxY;
-          badge.textContent = maxY + ' ✦';
+          badge.textContent = maxY;
           badge.title = 'Пункт змінено у ' + maxY + ' році';
           prev.appendChild(badge);
         }
@@ -343,4 +385,15 @@
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', run);
   else run();
 })();
+</script>
+
+<!-- Index для search: збираємо всі сторінки з frontmatter title -->
+<script>
+window.__SITE_INDEX__ = [
+{%- for p in site.html_pages -%}
+  {%- if p.title and p.url != "/404.html" -%}
+  { url: "{{ p.url | relative_url }}", title: {{ p.title | jsonify }}, desc: {{ p.description | default: '' | jsonify }}, id: {{ p.id | default: '' | jsonify }} },
+  {%- endif -%}
+{%- endfor -%}
+];
 </script>

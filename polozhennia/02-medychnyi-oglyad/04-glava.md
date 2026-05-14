@@ -3,6 +3,7 @@ id: polozhennia.r2.gl4
 type: glava
 parent_id: polozhennia.r2
 title: "Глава 4. Медичний огляд кандидатів на навчання у ВВНЗ і ліцеях"
+flavor: content
 source: https://zakon.rada.gov.ua/laws/show/z1109-08
 status: active
 parent: "Розділ II. Медичний огляд"
