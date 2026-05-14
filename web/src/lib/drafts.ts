@@ -62,3 +62,30 @@ export function tokenize(s: string): string[] {
   // Match runs of word characters, runs of whitespace, or single non-word chars.
   return s.match(/[\p{L}\p{N}_]+|\s+|[^\s\p{L}\p{N}_]/gu) ?? [];
 }
+
+import { diffWordsWithSpace } from 'diff';
+
+export interface DiffPart {
+  /** 'eq' | 'add' | 'del' — equal, added (only in `after`), removed (only in `before`). */
+  kind: 'eq' | 'add' | 'del';
+  value: string;
+}
+
+/** Run a word-level diff. Returns flat list of parts in source order. */
+export function wordDiff(before: string, after: string): DiffPart[] {
+  const parts = diffWordsWithSpace(before, after, { ignoreCase: false });
+  return parts.map((p) => ({
+    kind: p.added ? 'add' : p.removed ? 'del' : 'eq',
+    value: p.value,
+  }));
+}
+
+/** Project the diff onto the "before" side: equal + removed segments only. */
+export function diffBefore(parts: DiffPart[]): DiffPart[] {
+  return parts.filter((p) => p.kind !== 'add');
+}
+
+/** Project the diff onto the "after" side: equal + added segments only. */
+export function diffAfter(parts: DiffPart[]): DiffPart[] {
+  return parts.filter((p) => p.kind !== 'del');
+}

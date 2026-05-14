@@ -1,7 +1,7 @@
 ---
 import Layout from '../../layouts/Layout.astro';
 import { getCollection, render } from 'astro:content';
-import { resolveTarget } from '../../lib/drafts';
+import { resolveTarget, wordDiff, diffBefore, diffAfter } from '../../lib/drafts';
 
 export async function getStaticPaths() {
   const drafts = await getCollection('drafts');
@@ -126,18 +126,35 @@ const OP_COLOR: Record<string, string> = {
             </div>
           )}
 
-          {(op.op === 'redaction' && beforeText && afterText) && (
-            <div class="grid sm:grid-cols-2 gap-px bg-ink-200 dark:bg-ink-800">
-              <div class="bg-white dark:bg-ink-950">
-                <div class="px-4 py-1 text-[10px] font-mono uppercase tracking-wider text-ink-500 bg-ink-50 dark:bg-ink-900 border-b border-ink-200 dark:border-ink-800">До</div>
-                <div class="px-4 py-3 text-sm whitespace-pre-wrap font-sans bg-red-50/40 dark:bg-red-900/10 text-ink-700 dark:text-ink-300 line-through decoration-red-400/60 decoration-1">{beforeText}</div>
+          {(op.op === 'redaction' && beforeText && afterText) && (() => {
+            const parts = wordDiff(beforeText, afterText);
+            const bp = diffBefore(parts);
+            const ap = diffAfter(parts);
+            return (
+              <div class="grid sm:grid-cols-2 gap-px bg-ink-200 dark:bg-ink-800">
+                <div class="bg-white dark:bg-ink-950">
+                  <div class="px-4 py-1 text-[10px] font-mono uppercase tracking-wider text-ink-500 bg-ink-50 dark:bg-ink-900 border-b border-ink-200 dark:border-ink-800">До</div>
+                  <div class="px-4 py-3 text-sm whitespace-pre-wrap font-sans">
+                    {bp.map((p: any) => (
+                      p.kind === 'del'
+                        ? <span class="bg-red-200 dark:bg-red-900/40 text-red-900 dark:text-red-200 line-through decoration-red-500/70">{p.value}</span>
+                        : <span class="text-ink-600 dark:text-ink-400">{p.value}</span>
+                    ))}
+                  </div>
+                </div>
+                <div class="bg-white dark:bg-ink-950">
+                  <div class="px-4 py-1 text-[10px] font-mono uppercase tracking-wider text-ink-500 bg-ink-50 dark:bg-ink-900 border-b border-ink-200 dark:border-ink-800">Після</div>
+                  <div class="px-4 py-3 text-sm whitespace-pre-wrap font-sans">
+                    {ap.map((p: any) => (
+                      p.kind === 'add'
+                        ? <span class="bg-emerald-200 dark:bg-emerald-900/40 text-emerald-900 dark:text-emerald-200">{p.value}</span>
+                        : <span class="text-ink-600 dark:text-ink-400">{p.value}</span>
+                    ))}
+                  </div>
+                </div>
               </div>
-              <div class="bg-white dark:bg-ink-950">
-                <div class="px-4 py-1 text-[10px] font-mono uppercase tracking-wider text-ink-500 bg-ink-50 dark:bg-ink-900 border-b border-ink-200 dark:border-ink-800">Після</div>
-                <div class="px-4 py-3 text-sm whitespace-pre-wrap font-sans bg-emerald-50/40 dark:bg-emerald-900/10">{afterText}</div>
-              </div>
-            </div>
-          )}
+            );
+          })()}
 
           {op.op === 'redaction' && beforeText && !afterText && (
             <pre class="px-4 py-3 text-sm whitespace-pre-wrap font-sans bg-white dark:bg-ink-950">{beforeText}</pre>
