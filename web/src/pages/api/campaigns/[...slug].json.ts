@@ -1,6 +1,6 @@
 import type { APIRoute, GetStaticPaths } from 'astro';
 import { getCollection } from 'astro:content';
-import { lintCampaign, rollUpMemberLint } from '../../../lib/campaigns';
+import { lintCampaign, rollUpMemberLint, suggestNextMovement } from '../../../lib/campaigns';
 import { buildPunktIdIndex } from '../../../lib/drafts';
 
 export const getStaticPaths: GetStaticPaths = async () => {
@@ -23,6 +23,7 @@ export const GET: APIRoute = async ({ props, site, params }) => {
 
   const campaignFindings = lintCampaign(entry as any, draftsById as any);
   const memberFindings = rollUpMemberLint(entry as any, draftsById as any, knownIds, drafts as any);
+  const suggestedMoves = suggestNextMovement(entry as any, draftsById as any, campaignFindings, memberFindings);
 
   const members = (entry.data.member_drafts ?? []).map((id: string) => {
     const d = draftsById.get(id);
@@ -63,6 +64,7 @@ export const GET: APIRoute = async ({ props, site, params }) => {
     next_actions: entry.data.next_actions ?? [],
     references: entry.data.references ?? [],
     affected_punkti: [...affectedTargets],
+    suggested_next_movement: suggestedMoves,
     brief_markdown: entry.body ?? '',
     lint: {
       campaign: {

@@ -2,7 +2,7 @@
 import Layout from '../../layouts/Layout.astro';
 import { getCollection, render } from 'astro:content';
 import { buildPunktIdIndex, lintDraft, lintTerminology } from '../../lib/drafts';
-import { lintCampaign } from '../../lib/campaigns';
+import { lintCampaign, rollUpMemberLint, suggestNextMovement } from '../../lib/campaigns';
 
 export async function getStaticPaths() {
   const campaigns = await getCollection('campaigns');
@@ -20,6 +20,7 @@ const drafts = await getCollection('drafts');
 const draftsById = new Map(drafts.map((d) => [d.data.id, d]));
 
 const memberDrafts = (entry.data.member_drafts ?? []).map((id: string) => draftsById.get(id)).filter(Boolean);
+const knownIds = await buildPunktIdIndex();
 
 // Campaign-level linter.
 const campaignFindings = lintCampaign(entry as any, draftsById as any);
@@ -27,8 +28,11 @@ const campaignErrors = campaignFindings.filter((f) => f.level === 'error').lengt
 const campaignWarnings = campaignFindings.filter((f) => f.level === 'warning').length;
 const campaignInfos = campaignFindings.filter((f) => f.level === 'info').length;
 
+// Next-movement generator.
+const memberFindingsFlat = rollUpMemberLint(entry as any, draftsById as any, knownIds, drafts as any);
+const nextMoves = suggestNextMovement(entry as any, draftsById as any, campaignFindings, memberFindingsFlat);
+
 // Aggregate lint across member drafts.
-const knownIds = await buildPunktIdIndex();
 let totalErrors = 0;
 let totalWarnings = 0;
 const draftLint = new Map<string, { errors: number; warnings: number }>();
@@ -236,6 +240,31 @@ function fmtDate(v: any): string {
       <h2 class="text-base font-semibold mb-3">Метрики успіху</h2>
       <ul class="space-y-1 text-sm">
         {entry.data.metrics_of_success.map((m: string) => <li class="flex items-baseline gap-2"><span class="text-emerald-500">✓</span><span>{m}</span></li>)}
+      </ul>
+    </section>
+  )}
+
+  {nextMoves.length > 0 && (
+    <section class="mb-8 rounded-md border border-accent-300 dark:border-accent-700 overflow-hidden">
+      <header class="px-4 py-2 bg-accent-50 dark:bg-accent-900/20 border-b border-accent-200 dark:border-accent-800">
+        <div class="text-sm font-medium text-accent-700 dark:text-accent-300">🎯 Що робити далі (авто-рекомендації)</div>
+        <div class="text-xs text-ink-500 mt-0.5">Згенеровано на основі стану кампанії і її member-драфтів. На відміну від «Наступних кроків» нижче, які пише автор — ці підказки обчислюються автоматично.</div>
+      </header>
+      <ul class="divide-y divide-ink-200 dark:divide-ink-800 text-sm">
+        {nextMoves.map((m: any) => (
+          <li class="flex gap-3 px-4 py-3">
+            <span class:list={[
+              'text-[10px] font-medium uppercase tracking-wider px-1.5 py-0.5 rounded h-fit min-w-[3.5rem] text-center',
+              m.priority === 'high' ? 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300' :
+              m.priority === 'medium' ? 'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300' :
+              'bg-ink-100 text-ink-600 dark:bg-ink-800 dark:text-ink-400'
+            ]}>{m.priority === 'high' ? 'терміново' : m.priority === 'medium' ? 'середн.' : 'низьк.'}</span>
+            <div class="flex-1">
+              <div class="font-medium">{m.action}</div>
+              <div class="text-xs text-ink-500 mt-1 leading-relaxed">{m.reason}</div>
+            </div>
+          </li>
+        ))}
       </ul>
     </section>
   )}

@@ -124,6 +124,152 @@ export function lintCampaign(
   return findings;
 }
 
+// ---- Next movement generator ----
+
+export interface NextMovement {
+  priority: 'high' | 'medium' | 'low';
+  category: 'fix' | 'advance' | 'organize' | 'communicate';
+  action: string;
+  reason: string;
+}
+
+/**
+ * Suggest concrete next steps for a campaign based on its current state.
+ * Pure deterministic rules — no LLM. Output is actionable; reasons explain why.
+ */
+export function suggestNextMovement(
+  campaign: CampaignEntry,
+  draftsById: Map<string, DraftEntry>,
+  campaignFindings: CampaignLintFinding[],
+  memberFindings: CampaignLintFinding[],
+): NextMovement[] {
+  const moves: NextMovement[] = [];
+  const members: DraftEntry[] = (campaign.data.member_drafts ?? [])
+    .map((id) => draftsById.get(id))
+    .filter((d): d is DraftEntry => !!d);
+
+  const memberErrors = memberFindings.filter((f) => f.level === 'error');
+  const memberWarnings = memberFindings.filter((f) => f.level === 'warning');
+  const inDraft = members.filter((d) => d.data.status === 'draft');
+  const inReview = members.filter((d) => d.data.status === 'review');
+  const adopted = members.filter((d) => d.data.status === 'adopted');
+
+  // ---- HIGH priority: fundamental problems that block progress ----
+
+  if (!campaign.data.goal || campaign.data.goal.trim().length < 20) {
+    moves.push({
+      priority: 'high',
+      category: 'organize',
+      action: 'Сформулюйте мету кампанії (поле `goal` у YAML).',
+      reason: 'Без чіткої мети зовнішнім стейкхолдерам важко зрозуміти, чого ви домагаєтеся, і кампанію неможливо успішно "продати".',
+    });
+  }
+
+  if (members.length === 0 && campaign.data.status === 'active') {
+    moves.push({
+      priority: 'high',
+      category: 'organize',
+      action: 'Створіть перший драфт правки у /drafts/ і додайте до member_drafts.',
+      reason: 'Активна кампанія без жодного драфта — це декларація без інструменту. Спочатку потрібен текст конкретної правки.',
+    });
+  }
+
+  if (memberErrors.length > 0) {
+    moves.push({
+      priority: 'high',
+      category: 'fix',
+      action: `Виправте ${memberErrors.length} ${memberErrors.length === 1 ? 'помилку' : 'помилок'} у member-драфтах перед просуванням.`,
+      reason: 'Драфти з помилками (неіснуючі посилання, конфлікти ID) не можна подавати до Мін\'юсту — вони будуть автоматично повернуті.',
+    });
+  }
+
+  // ---- MEDIUM priority: structural issues that need addressing ----
+
+  if (!campaign.data.target_audience || campaign.data.target_audience.length === 0) {
+    moves.push({
+      priority: 'medium',
+      category: 'organize',
+      action: 'Визначте target_audience: конкретні підрозділи МОУ, нар. депутатів, омбудсмана, які можуть просунути правки.',
+      reason: 'Без чіткої цільової аудиторії неможливо планувати конкретні зустрічі або lobbying-кроки.',
+    });
+  }
+
+  if (campaignFindings.some((f) => f.code === 'competing-targets-within-campaign')) {
+    moves.push({
+      priority: 'medium',
+      category: 'organize',
+      action: 'Узгодьте конкуруючі драфти: оберіть основний підхід або зведіть їх в один драфт.',
+      reason: 'У кампанії є драфти, які конкурують за той самий пункт. Перед адопцією доведеться обрати — краще зробити це зараз.',
+    });
+  }
+
+  if (inDraft.length === members.length && members.length > 0) {
+    moves.push({
+      priority: 'medium',
+      category: 'advance',
+      action: 'Переведіть один-два member-драфти зі статусу `draft` у `review`, коли вони готові.',
+      reason: 'Усі member-драфти ще в чернетках — нікого з зовнішніх стейкхолдерів не запрошено до огляду. Стартуйте dyскусію.',
+    });
+  }
+
+  if (memberWarnings.length > 0 && memberErrors.length === 0) {
+    moves.push({
+      priority: 'medium',
+      category: 'fix',
+      action: `Розгляньте ${memberWarnings.length} попередження у member-драфтах — особливо терміни-дрейф і конфлікти.`,
+      reason: 'Попередження не блокують подання, але створюють shadow-debt: пізніше їх все одно треба буде вирішити, або наказ буде неконсистентний.',
+    });
+  }
+
+  // ---- LOW priority: organisational housekeeping ----
+
+  if (!campaign.data.next_actions || campaign.data.next_actions.length === 0) {
+    moves.push({
+      priority: 'low',
+      category: 'organize',
+      action: 'Опишіть 3-5 next_actions: конкретні зустрічі, документи, дедлайни.',
+      reason: 'План з конкретними кроками легше виконати і легше делегувати членам коаліції.',
+    });
+  }
+
+  if (!campaign.data.target_audience || (campaign.data.target_audience.length > 0 && (!members.length || inReview.length === 0))) {
+    // Skip if conditions already covered above.
+  }
+
+  // ---- Positive signals: time to advance ----
+
+  if (
+    members.length > 0 &&
+    memberErrors.length === 0 &&
+    (inReview.length > 0 || inDraft.length > 0) &&
+    campaign.data.status === 'active'
+  ) {
+    moves.push({
+      priority: 'medium',
+      category: 'communicate',
+      action: 'Опублікуйте спільне звернення (з коаліцією) на основі member-драфтів.',
+      reason: 'Драфти юридично готові, кампанія активна — час давати тиск ззовні. Прес-реліз, лист до МОУ, відкрите звернення.',
+    });
+    moves.push({
+      priority: 'medium',
+      category: 'advance',
+      action: 'Заплануйте зустріч з юр. департаментом МОУ або профільним нар. депутатом.',
+      reason: 'У вас є готовий проєкт тексту правки + обґрунтування — це найсильніша позиція для очної розмови.',
+    });
+  }
+
+  if (adopted.length > 0 && adopted.length === members.length) {
+    moves.push({
+      priority: 'high',
+      category: 'organize',
+      action: 'Усі member-драфти прийнято — час змінити статус кампанії на `concluded`.',
+      reason: 'Кампанія, яка лишається `active` після досягнення мети, замилює реальний стан системи.',
+    });
+  }
+
+  return moves;
+}
+
 /** Roll up lint findings from all member drafts to a single list. */
 export function rollUpMemberLint(
   campaign: CampaignEntry,

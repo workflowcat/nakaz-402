@@ -8,6 +8,8 @@ const filled = realChapters.filter(c => !c.data.stub);
 const drafts = await getCollection('drafts');
 const activeDrafts = drafts.filter((d: any) => d.data.status !== 'rejected' && d.data.status !== 'adopted');
 const rh = await getCollection('rh');
+const campaigns = (await getCollection('campaigns')).filter((c) => !c.id.toLowerCase().endsWith('readme.md'));
+const activeCampaigns = campaigns.filter((c: any) => c.data.status === 'active');
 ---
 <Layout title="Головна">
   <section class="py-12 sm:py-16">
@@ -107,6 +109,34 @@ const rh = await getCollection('rh');
   </section>
 
   <section class="mt-16">
+    <h2 class="text-xl font-bold tracking-tight mb-2 pt-3 border-t border-ink-200 dark:border-ink-800 relative">
+      <span class="absolute -top-px left-0 w-9 h-px bg-accent-500"></span>
+      Якщо ви лобіюєте зміни
+    </h2>
+    <p class="text-sm text-ink-500 mb-5 max-w-3xl leading-relaxed">
+      Для advocacy-організацій (Veteran Hub, Right to Protection, БМА),
+      коаліцій, нар. депутатів. Зберіть кілька пов'язаних правок у одну
+      кампанію з спільною метою, ключовими меседжами і планом просування —
+      сайт сам перевірить узгодженість і запропонує конкретні next-кроки.
+    </p>
+    <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-3 mb-12">
+      <a href="/campaigns/" class="block p-4 rounded-md border border-accent-300 dark:border-accent-700 bg-accent-50/40 dark:bg-accent-900/10 hover:bg-accent-50 dark:hover:bg-accent-900/20 transition-colors">
+        <div class="text-sm font-medium text-accent-600 dark:text-accent-300 mb-1">🎯 Кампанії</div>
+        <div class="font-medium mb-1">{activeCampaigns.length} активн{activeCampaigns.length === 1 ? 'а' : 'их'}</div>
+        <div class="text-xs text-ink-500">Координовані набори правок з спільною метою. Зведений lint, цілі лобіювання, ключові меседжі, наступні кроки.</div>
+      </a>
+      <div class="block p-4 rounded-md border border-ink-200 dark:border-ink-800">
+        <div class="text-sm font-medium text-accent-600 dark:text-accent-300 mb-1">🩺 Plan checker</div>
+        <div class="font-medium mb-1">6 правил coherence</div>
+        <div class="text-xs text-ink-500">Чи member-драфти існують, чи статус узгоджений, чи нема порожньої мети, чи нема конфліктів у coalition.</div>
+      </div>
+      <div class="block p-4 rounded-md border border-ink-200 dark:border-ink-800">
+        <div class="text-sm font-medium text-accent-600 dark:text-accent-300 mb-1">🧭 Next-movement</div>
+        <div class="font-medium mb-1">Авто-рекомендації</div>
+        <div class="text-xs text-ink-500">З поточного стану кампанії — конкретні next-steps з пріоритетом. «Час публічного звернення», «Зустріч з МОУ», «Зведіть конкуруючі драфти».</div>
+      </div>
+    </div>
+
     <h2 class="text-xl font-bold tracking-tight mb-2 pt-3 border-t border-ink-200 dark:border-ink-800 relative">
       <span class="absolute -top-px left-0 w-9 h-px bg-accent-500"></span>
       Якщо ви готуєте зміну до Положення
